@@ -17,7 +17,25 @@ const COLORS = {
     PRIMARY: '#005CAF'
 };
 
-const TODAY_TEMP = 38;  // Mock temperature for Kaohsiung
+// ==================== Kaohsiung Major Transit Stations ====================
+const TRANSIT_STATIONS = [
+    { name: '左營', lat: 22.6859, lon: 120.3048, type: 'mrt', line: 'red' },
+    { name: '高雄車站', lat: 22.6387, lon: 120.3137, type: 'mrt', line: 'red' },
+    { name: '美麗島', lat: 22.6353, lon: 120.3176, type: 'mrt', line: 'red' },
+    { name: '中央公園', lat: 22.6289, lon: 120.3202, type: 'mrt', line: 'red' },
+    { name: '三多商圈', lat: 22.6088, lon: 120.3256, type: 'mrt', line: 'red' },
+    { name: '西子灣', lat: 22.6462, lon: 120.3512, type: 'mrt', line: 'orange' },
+    { name: '衛武營', lat: 22.5559, lon: 120.3388, type: 'mrt', line: 'orange' },
+    { name: '巨蛋', lat: 22.6725, lon: 120.3017, type: 'mrt', line: 'red' },
+    { name: '凹子底', lat: 22.7170, lon: 120.2905, type: 'mrt', line: 'red' },
+    { name: '哈瑪星', lat: 22.6548, lon: 120.3640, type: 'lightrail', line: 'green' },
+    { name: '真愛碼頭', lat: 22.6405, lon: 120.3676, type: 'lightrail', line: 'green' },
+    { name: '駁二藝術特區', lat: 22.6397, lon: 120.3618, type: 'lightrail', line: 'green' },
+    { name: '光榮碼頭', lat: 22.6363, lon: 120.3560, type: 'lightrail', line: 'green' },
+    { name: '英國領事館', lat: 22.6428, lon: 120.3456, type: 'lightrail', line: 'green' }
+];
+
+const TODAY_TEMP = 38;
 
 // ==================== Mock Data (Kaohsiung Station to Sizihwan) ====================
 const MOCK_ROUTE_DATA = {
@@ -184,6 +202,227 @@ let userLocation = null;
 let selectedTransitTypes = new Set(['mrt', 'lightrail', 'bus', 'bike']);
 let isLoading = false;
 
+// Location coordinates storage
+let originCoords = null;
+let destinationCoords = null;
+
+// Debounce timers
+let originDebounceTimer = null;
+let destinationDebounceTimer = null;
+
+// ==================== Utility Functions ====================
+function debounce(func, delay) {
+    return function(...args) {
+        clearTimeout(func.timer);
+        func.timer = setTimeout(() => func(...args), delay);
+    };
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function findNearestStation(lat, lon) {
+    let nearest = TRANSIT_STATIONS[0];
+    let minDist = calculateDistance(lat, lon, nearest.lat, nearest.lon);
+    
+    for (let i = 1; i < TRANSIT_STATIONS.length; i++) {
+        const station = TRANSIT_STATIONS[i];
+        const dist = calculateDistance(lat, lon, station.lat, station.lon);
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = station;
+        }
+    }
+    
+    return { station: nearest, distance: minDist };
+}
+
+// ==================== Nominatim API Functions ====================
+async function searchNominatim(query) {
+    try {
+        const encodedQuery = encodeURIComponent(query);
+        const viewbox = '120.1,22.4,120.5,23.1';
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&viewbox=${viewbox}&bounded=1&limit=5&countrycodes=tw`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'KaohsiungTransitApp/1.0'
+            }
+        });
+        
+        if (!response.ok) {
+            console.error('Nominatim API error:', response.status);
+            return [];
+        }
+        
+        const results = await response.json();
+        return results.map(item => ({
+            name: item.name || item.display_name.split(',')[0],
+            displayName: item.display_name,
+            lat: parseFloat(item.lat),
+            lon: parseFloat(item.lon)
+        }));
+    } catch (error) {
+        console.error('Nominatim search error:', error);
+        return [];
+    }
+}
+
+// ==================== Autocomplete UI Functions ====================
+function showAutocompleteResults(results, locationType) {
+    const dropdownId = locationType === 'origin' ? 'originDropdown' : 'destinationDropdown';
+    const dropdown = document.getElementById(dropdownId);
+    
+    dropdown.innerHTML = '';
+    
+    if (results.length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+    
+    results.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        item.innerHTML = `
+            <div class="autocomplete-item-main">📍 ${result.name}</div>
+            <div class="autocomplete-item-sub">${result.displayName}</div>
+        `;
+        
+        item.addEventListener('click', () => {
+            selectAutocompleteItem(result, locationType);
+        });
+        
+        dropdown.appendChild(item);
+    });
+    
+    dropdown.classList.remove('hidden');
+}
+
+function selectAutocompleteItem(result, locationType) {
+    const inputId = locationType === 'origin' ? 'originInput' : 'destinationInput';
+    const dropdownId = locationType === 'origin' ? 'originDropdown' : 'destinationDropdown';
+    
+    document.getElementById(inputId).value = result.name;
+    document.getElementById(dropdownId).classList.add('hidden');
+    
+    if (locationType === 'origin') {
+        originCoords = { lat: result.lat, lon: result.lon };
+    } else {
+        destinationCoords = { lat: result.lat, lon: result.lon };
+    }
+}
+
+function handleAutocompleteInput(e) {
+    const locationType = e.target.getAttribute('data-location-type');
+    const query = e.target.value.trim();
+    
+    if (query.length < 2) {
+        const dropdownId = locationType === 'origin' ? 'originDropdown' : 'destinationDropdown';
+        document.getElementById(dropdownId).classList.add('hidden');
+        return;
+    }
+    
+    const debounceFunc = locationType === 'origin' ? debouncedOriginSearch : debouncedDestinationSearch;
+    debounceFunc(query, locationType);
+}
+
+const debouncedOriginSearch = debounce(async function(query, locationType) {
+    const results = await searchNominatim(query);
+    showAutocompleteResults(results, locationType);
+}, 300);
+
+const debouncedDestinationSearch = debounce(async function(query, locationType) {
+    const results = await searchNominatim(query);
+    showAutocompleteResults(results, locationType);
+}, 300);
+
+// ==================== Smart Route Generation ====================
+function generateSmartRoute(originLat, originLon, destLat, destLon) {
+    const originNearest = findNearestStation(originLat, originLon);
+    const destNearest = findNearestStation(destLat, destLon);
+    
+    const originStation = originNearest.station;
+    const destStation = destNearest.station;
+    const originWalkDist = originNearest.distance;
+    const destWalkDist = destNearest.distance;
+    
+    const originWalkTime = Math.ceil(originWalkDist * 15);
+    const destWalkTime = Math.ceil(destWalkDist * 15);
+    const transitTime = 20;
+    const totalTime = originWalkTime + transitTime + destWalkTime;
+    
+    const hasHeatWarning = originWalkTime > 10 || destWalkTime > 10;
+    
+    // Build route coordinates
+    const routeCoordinates = [
+        [originLat, originLon],
+        [originStation.lat, originStation.lon],
+        [destStation.lat, destStation.lon],
+        [destLat, destLon]
+    ];
+    
+    // Build steps
+    const steps = [];
+    
+    if (originWalkDist > 0.01) {
+        steps.push({
+            type: 'walk',
+            duration: originWalkTime,
+            distance: originWalkDist.toFixed(2) + 'km',
+            instruction: `步行至${originStation.name}站`,
+            startCoords: [originLat, originLon],
+            endCoords: [originStation.lat, originStation.lon]
+        });
+    }
+    
+    const lineType = originStation.line === 'red' ? 'red' : originStation.line === 'orange' ? 'orange' : 'green';
+    const lineColor = lineType === 'red' ? '紅線' : lineType === 'orange' ? '橘線' : '輕軌';
+    
+    steps.push({
+        type: originStation.type,
+        line: lineType,
+        duration: transitTime,
+        distance: calculateDistance(originStation.lat, originStation.lon, destStation.lat, destStation.lon).toFixed(2) + 'km',
+        instruction: `搭乘${lineColor}由${originStation.name}至${destStation.name}`,
+        stations: [originStation.name, destStation.name],
+        startCoords: [originStation.lat, originStation.lon],
+        endCoords: [destStation.lat, destStation.lon]
+    });
+    
+    if (destWalkDist > 0.01) {
+        steps.push({
+            type: 'walk',
+            duration: destWalkTime,
+            distance: destWalkDist.toFixed(2) + 'km',
+            instruction: `步行至目的地`,
+            startCoords: [destStation.lat, destStation.lon],
+            endCoords: [destLat, destLon]
+        });
+    }
+    
+    return {
+        id: `route_${Date.now()}`,
+        type: 'smart',
+        duration: totalTime.toString(),
+        departureTime: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
+        arrivalTime: new Date(Date.now() + totalTime * 60000).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
+        distance: (originWalkDist + calculateDistance(originStation.lat, originStation.lon, destStation.lat, destStation.lon) + destWalkDist).toFixed(2) + 'km',
+        steps: steps,
+        hasHeatWarning: hasHeatWarning,
+        coordinates: routeCoordinates,
+        expanded: false
+    };
+}
+
 // ==================== TDX API Functions ====================
 async function getTdxToken() {
     try {
@@ -215,7 +454,7 @@ async function getTdxToken() {
         
         return accessToken;
     } catch (error) {
-        console.warn('TDX Token Error (using Mock Data):', error.message);
+        console.warn('TDX Token Error (using Smart Generation):', error.message);
         return null;
     }
 }
@@ -225,34 +464,28 @@ async function fetchTransitRoute(origin, destination) {
         isLoading = true;
         showLoadingIndicator();
 
-        const token = await getTdxToken();
-
-        if (!token || CLIENT_ID === 'YOUR_CLIENT_ID') {
-            console.log('Using Mock Data - TDX credentials not configured');
-            return useMockData();
+        if (!originCoords || !destinationCoords) {
+            showErrorMessage('無法取得座標，請重新輸入地點');
+            return [];
         }
 
-        // TDX API call would go here
-        // For now, we use mock data as fallback
-        return useMockData();
+        const route = generateSmartRoute(
+            originCoords.lat,
+            originCoords.lon,
+            destinationCoords.lat,
+            destinationCoords.lon
+        );
+
+        return [route];
 
     } catch (error) {
         console.error('Route fetch error:', error);
-        return useMockData();
+        showErrorMessage('路線規劃失敗，請稍後重試');
+        return [];
     } finally {
         isLoading = false;
         hideLoadingIndicator();
     }
-}
-
-function useMockData() {
-    return MOCK_ROUTE_DATA.routes.map(route => ({
-        ...route,
-        steps: route.steps.map(step => ({
-            ...step,
-            expanded: false
-        }))
-    }));
 }
 
 // ==================== UI State Functions ====================
@@ -315,20 +548,114 @@ function createRouteCard(route) {
     card.className = 'route-card';
     card.setAttribute('data-route-id', route.id);
 
+    // Header (Summary)
     const header = document.createElement('div');
-    header.className = 'route-header';
-    header.innerHTML = `
-        <span class="route-time">${route.departureTime} - ${route.arrivalTime}</span>
-        <span class="route-duration">⏱️ ${route.duration}分鐘</span>
+    header.className = 'route-card-header';
+    
+    const summary = document.createElement('div');
+    summary.className = 'route-summary';
+    
+    const title = document.createElement('div');
+    title.className = 'route-title';
+    title.textContent = `最佳路線 · ${route.departureTime} → ${route.arrivalTime}`;
+    
+    const meta = document.createElement('div');
+    meta.className = 'route-meta';
+    
+    const timeBadge = document.createElement('div');
+    timeBadge.className = 'route-time-badge';
+    timeBadge.textContent = `⏱️ ${route.duration}分`;
+    
+    const distanceBadge = document.createElement('div');
+    distanceBadge.className = 'route-distance-badge';
+    distanceBadge.textContent = route.distance;
+    
+    const transitIcons = document.createElement('div');
+    transitIcons.className = 'route-transit-icons';
+    route.steps.forEach(step => {
+        const icons = {
+            'walk': '🚶',
+            'mrt': '🚇',
+            'bus': '🚌',
+            'lightrail': '🚃',
+            'bike': '🚲'
+        };
+        transitIcons.textContent += icons[step.type] || '📍';
+    });
+    
+    meta.appendChild(timeBadge);
+    meta.appendChild(distanceBadge);
+    meta.appendChild(transitIcons);
+    
+    const toggleIcon = document.createElement('div');
+    toggleIcon.className = 'route-toggle-icon';
+    toggleIcon.textContent = '▼';
+    
+    summary.appendChild(title);
+    summary.appendChild(meta);
+    
+    header.appendChild(summary);
+    header.appendChild(toggleIcon);
+    
+    // Add warning if applicable
+    if (route.hasHeatWarning) {
+        const warning = document.createElement('div');
+        warning.className = 'route-warning-inline';
+        warning.textContent = '☀️ 高溫路線 - 建議準備防曬';
+        header.appendChild(warning);
+    }
+
+    // Content (Details)
+    const content = document.createElement('div');
+    content.className = 'route-card-content';
+    
+    const body = document.createElement('div');
+    body.className = 'route-card-body';
+    
+    // Info rows
+    const infoRow1 = document.createElement('div');
+    infoRow1.className = 'route-info-row';
+    infoRow1.innerHTML = `
+        <div class="route-info-label">出發時間:</div>
+        <div class="route-info-value">${route.departureTime}</div>
     `;
-
-    const warning = document.createElement('div');
-    warning.className = `route-warning ${!route.hasHeatWarning ? 'hidden' : ''}`;
-    warning.innerHTML = `☀️ 高溫路線：沿途公車/步行段多，建議準備防曬`;
-
+    
+    const infoRow2 = document.createElement('div');
+    infoRow2.className = 'route-info-row';
+    infoRow2.innerHTML = `
+        <div class="route-info-label">到達時間:</div>
+        <div class="route-info-value">${route.arrivalTime}</div>
+    `;
+    
+    const infoRow3 = document.createElement('div');
+    infoRow3.className = 'route-info-row';
+    infoRow3.innerHTML = `
+        <div class="route-info-label">總距離:</div>
+        <div class="route-info-value">${route.distance}</div>
+    `;
+    
+    const infoRow4 = document.createElement('div');
+    infoRow4.className = 'route-info-row';
+    infoRow4.innerHTML = `
+        <div class="route-info-label">總時間:</div>
+        <div class="route-info-value">${route.duration}分鐘</div>
+    `;
+    
+    body.appendChild(infoRow1);
+    body.appendChild(infoRow2);
+    body.appendChild(infoRow3);
+    body.appendChild(infoRow4);
+    
+    // Steps
+    const stepsLabel = document.createElement('div');
+    stepsLabel.className = 'route-info-label';
+    stepsLabel.style.marginTop = '8px';
+    stepsLabel.textContent = '轉乘步驟：';
+    body.appendChild(stepsLabel);
+    
     const stepsContainer = document.createElement('div');
     stepsContainer.className = 'route-steps';
-
+    
     route.steps.forEach((step, index) => {
         const stepEl = document.createElement('div');
         stepEl.className = 'route-step';
@@ -349,15 +676,45 @@ function createRouteCard(route) {
         stepEl.addEventListener('click', () => handleStepClick(step, route));
         stepsContainer.appendChild(stepEl);
     });
+    
+    body.appendChild(stepsContainer);
+    
+    content.appendChild(body);
 
     card.appendChild(header);
-    card.appendChild(warning);
-    card.appendChild(stepsContainer);
+    card.appendChild(content);
 
+    // Toggle expand/collapse
+    header.addEventListener('click', () => toggleCardExpansion(card, route));
+
+    // Hover effects
     card.addEventListener('mouseenter', () => highlightRoute(route.id, true));
     card.addEventListener('mouseleave', () => highlightRoute(route.id, false));
 
     return card;
+}
+
+function toggleCardExpansion(card, route) {
+    const isActive = card.classList.contains('active');
+    
+    // Close all cards
+    document.querySelectorAll('.route-card.active').forEach(c => {
+        c.classList.remove('active');
+    });
+    
+    // Open clicked card if it wasn't already open
+    if (!isActive) {
+        card.classList.add('active');
+        selectedRouteId = route.id;
+        
+        // Draw route on map
+        drawRoute(route);
+        
+        // Highlight this route
+        highlightRoute(route.id, true);
+    } else {
+        selectedRouteId = null;
+    }
 }
 
 function getStepIcon(step) {
@@ -383,37 +740,25 @@ function getStepDetails(step) {
             details.info = `${step.distance} · ${step.instruction}`;
             break;
         case 'mrt':
-            details.title = `${getLineColor(step.line, 'text')} ${step.line === 'red' ? '紅線' : '橘線'}`;
-            details.info = `${step.duration} 分鐘 · ${step.distance} · ${step.instruction}`;
+            const lineColor = step.line === 'red' ? '紅線' : step.line === 'orange' ? '橘線' : '橙線';
+            details.title = `捷運${lineColor}`;
+            details.info = `${step.duration}分 · ${step.distance} · ${step.instruction}`;
             break;
         case 'lightrail':
-            details.title = `輕軌 (${step.direction}圈)`;
-            details.info = `${step.duration} 分鐘 · ${step.distance} · 請前往${step.direction}圈月台`;
+            details.title = `輕軌`;
+            details.info = `${step.duration}分 · ${step.distance} · ${step.instruction}`;
             break;
         case 'bus':
-            details.title = `公車 ${step.line}`;
-            details.info = `${step.duration} 分鐘 · ${step.distance}`;
+            details.title = `公車`;
+            details.info = `${step.duration}分 · ${step.distance}`;
             break;
         case 'bike':
             details.title = `YouBike`;
-            details.info = `${step.duration} 分鐘 · ${step.distance}`;
+            details.info = `${step.duration}分 · ${step.distance}`;
             break;
     }
 
     return details;
-}
-
-function getLineColor(line, type = 'color') {
-    const colorMap = {
-        'red': COLORS.MRT_RED,
-        'orange': COLORS.MRT_ORANGE,
-        'green': COLORS.LIGHTRAIL_GREEN
-    };
-
-    if (type === 'color') {
-        return colorMap[line] || COLORS.PRIMARY;
-    }
-    return line === 'red' ? '🔴' : line === 'orange' ? '🟠' : '🟢';
 }
 
 // ==================== Map Functions ====================
@@ -445,15 +790,20 @@ function initializeMap() {
 }
 
 function drawRoute(route) {
-    if (drawnLines[route.id]) {
-        map.removeLayer(drawnLines[route.id]);
-    }
+    // Clear old polylines for this route
+    Object.keys(drawnLines).forEach(key => {
+        if (key.startsWith(route.id)) {
+            map.removeLayer(drawnLines[key]);
+            delete drawnLines[key];
+        }
+    });
 
+    // Draw main polyline
     const polyline = L.polyline(
         route.coordinates.map(c => [c[0], c[1]]),
         {
             color: COLORS.PRIMARY,
-            weight: 4,
+            weight: 5,
             opacity: 0.8,
             smoothFactor: 1
         }
@@ -462,7 +812,7 @@ function drawRoute(route) {
     polyline.addTo(map);
     drawnLines[route.id] = polyline;
 
-    // Add markers for start and end
+    // Add markers
     const startMarker = L.circleMarker(route.coordinates[0], {
         radius: 10,
         fillColor: '#4CAF50',
@@ -489,21 +839,11 @@ function highlightRoute(routeId, isHighlight) {
     const line = drawnLines[routeId];
     if (line && line.setStyle) {
         if (isHighlight) {
-            line.setStyle({ weight: 8, opacity: 1 });
+            line.setStyle({ weight: 8, opacity: 1, color: COLORS.PRIMARY });
         } else {
-            line.setStyle({ weight: 4, opacity: 0.5 });
+            line.setStyle({ weight: 4, opacity: 0.4, color: COLORS.PRIMARY });
         }
     }
-
-    // Update card styling
-    const cards = document.querySelectorAll('[data-route-id]');
-    cards.forEach(card => {
-        if (isHighlight && card.getAttribute('data-route-id') === routeId) {
-            card.style.boxShadow = '0 8px 20px rgba(0, 92, 175, 0.3)';
-        } else if (!isHighlight && card.getAttribute('data-route-id') === routeId) {
-            card.style.boxShadow = '0 4px 12px rgba(0, 92, 175, 0.2)';
-        }
-    });
 }
 
 function handleStepClick(step, route) {
@@ -516,23 +856,17 @@ function handleStepClick(step, route) {
 function handleSwapLocations() {
     const origin = document.getElementById('originInput');
     const destination = document.getElementById('destinationInput');
-
     const temp = origin.value;
     origin.value = destination.value;
     destination.value = temp;
 
-    // Trigger animation
+    const tempCoords = originCoords;
+    originCoords = destinationCoords;
+    destinationCoords = tempCoords;
+
     const btn = document.getElementById('swapLocationsBtn');
     btn.classList.add('active');
     setTimeout(() => btn.classList.remove('active'), 500);
-
-    // Animate input fields
-    origin.style.animation = 'none';
-    destination.style.animation = 'none';
-    setTimeout(() => {
-        origin.style.animation = 'opacity-fade 0.3s ease';
-        destination.style.animation = 'opacity-fade 0.3s ease';
-    }, 10);
 }
 
 async function handleSearch() {
@@ -546,31 +880,19 @@ async function handleSearch() {
         return;
     }
 
-    // Mock validation - in real app, would geocode addresses
-    if (origin === '高雄車站' && destination === '西子灣') {
-        const routes = await fetchTransitRoute(origin, destination);
-        
-        // Filter by selected transit types
-        const filtered = routes.filter(route => {
-            return route.steps.some(step => selectedTransitTypes.has(step.type));
-        });
-
-        if (filtered.length === 0) {
-            showErrorMessage('暫時無法取得符合篩選條件的路線，請調整篩選條件');
-            return;
-        }
-
-        displayRoutes(filtered);
-        
-        // Draw all routes on map
-        filtered.forEach(route => {
-            drawRoute(route);
-            highlightRoute(route.id, false);
-        });
-
-    } else {
-        showErrorMessage('暫時無法取得路線，請稍後再試或重新輸入地點（試試看「高雄車站」到「西子灣」）');
+    if (!originCoords || !destinationCoords) {
+        showErrorMessage('請確保起點和終點已正確選取');
+        return;
     }
+
+    const routes = await fetchTransitRoute(origin, destination);
+    
+    if (routes.length === 0) {
+        showErrorMessage('無法規劃路線，請重新嘗試');
+        return;
+    }
+
+    displayRoutes(routes);
 }
 
 function handleTransitFilterChange(e) {
@@ -589,30 +911,9 @@ function handleTransitFilterChange(e) {
 function handleUseCurrentLocation() {
     if (userLocation) {
         document.getElementById('originInput').value = `目前位置 (${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)})`;
+        originCoords = { lat: userLocation.lat, lon: userLocation.lng };
     } else {
         showErrorMessage('無法取得您的位置，請允許定位權限');
-    }
-}
-
-function handleRouteCardClick(e) {
-    const card = e.currentTarget;
-    const routeId = card.getAttribute('data-route-id');
-    
-    if (selectedRouteId === routeId) {
-        selectedRouteId = null;
-        card.style.borderColor = '';
-    } else {
-        document.querySelectorAll('.route-card').forEach(c => {
-            c.style.borderColor = '';
-        });
-        selectedRouteId = routeId;
-        card.style.borderColor = COLORS.PRIMARY;
-        
-        const route = currentRoutes.find(r => r.id === routeId);
-        if (route) {
-            const bounds = L.latLngBounds(route.coordinates.map(c => [c[0], c[1]]));
-            map.fitBounds(bounds, { padding: [80, 80] });
-        }
     }
 }
 
@@ -626,12 +927,24 @@ function setupEventListeners() {
         btn.addEventListener('click', handleTransitFilterChange);
     });
 
+    document.querySelectorAll('.location-input').forEach(input => {
+        input.addEventListener('input', handleAutocompleteInput);
+    });
+
     document.getElementById('originInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSearch();
     });
 
     document.getElementById('destinationInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSearch();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('location-input')) {
+            document.getElementById('originDropdown').classList.add('hidden');
+            document.getElementById('destinationDropdown').classList.add('hidden');
+        }
     });
 }
 
@@ -655,10 +968,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeMap();
     setupEventListeners();
     handleResponsive();
-
-    // Load default route for demo
-    const originInput = document.getElementById('originInput');
-    const destInput = document.getElementById('destinationInput');
-    originInput.value = '高雄車站';
-    destInput.value = '西子灣';
 });

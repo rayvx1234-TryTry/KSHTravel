@@ -24,34 +24,44 @@
             <!-- Origin & Destination -->
             <div class="location-section">
                 <div class="location-input-group">
-                    <div class="location-input-wrapper">
+                    <!-- Origin Input with Autocomplete -->
+                    <div class="location-input-wrapper autocomplete-wrapper">
                         <label for="originInput" class="location-label">📍 起點</label>
-                        <input 
-                            type="text" 
-                            id="originInput" 
-                            class="location-input" 
-                            placeholder="輸入起點或點擊「使用目前位置」"
-                            autocomplete="off"
-                        >
-                        <button id="useCurrentLocationBtn" class="use-location-btn" title="使用目前位置">📍</button>
+                        <div class="input-container">
+                            <input 
+                                type="text" 
+                                id="originInput" 
+                                class="location-input" 
+                                placeholder="輸入起點或點擊「使用目前位置」"
+                                autocomplete="off"
+                                data-location-type="origin"
+                            >
+                            <button id="useCurrentLocationBtn" class="use-location-btn" title="使用目前位置">📍</button>
+                        </div>
+                        <div id="originDropdown" class="autocomplete-dropdown hidden"></div>
                     </div>
 
                     <button id="swapLocationsBtn" class="swap-locations-btn" title="對調起終點">⇅</button>
 
-                    <div class="location-input-wrapper">
+                    <!-- Destination Input with Autocomplete -->
+                    <div class="location-input-wrapper autocomplete-wrapper">
                         <label for="destinationInput" class="location-label">📍 終點</label>
-                        <input 
-                            type="text" 
-                            id="destinationInput" 
-                            class="location-input" 
-                            placeholder="輸入終點"
-                            autocomplete="off"
-                        >
+                        <div class="input-container">
+                            <input 
+                                type="text" 
+                                id="destinationInput" 
+                                class="location-input" 
+                                placeholder="輸入終點"
+                                autocomplete="off"
+                                data-location-type="destination"
+                            >
+                        </div>
+                        <div id="destinationDropdown" class="autocomplete-dropdown hidden"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Transit Filters -->
+            <!-- Filter Section -->
             <div class="filter-section">
                 <label class="filter-label">篩選交通工具</label>
                 <div class="transit-filter">
@@ -65,18 +75,21 @@
             <!-- Search Button -->
             <button id="searchBtn" class="search-button">搜尋最佳大眾運輸</button>
 
-            <!-- Loading Indicator -->
-            <div id="loadingIndicator" class="loading-indicator hidden">
-                <div class="spinner"></div>
-                <span>正在規劃最佳路線...</span>
-            </div>
+            <!-- Results Area -->
+            <div class="results-area">
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="loading-indicator hidden">
+                    <div class="spinner"></div>
+                    <span>正在規劃最佳路線...</span>
+                </div>
 
-            <!-- Error Message -->
-            <div id="errorMessage" class="error-message hidden"></div>
+                <!-- Error Message -->
+                <div id="errorMessage" class="error-message hidden"></div>
 
-            <!-- Route Cards Container -->
-            <div class="routes-container" id="routesContainer">
-                <!-- Route cards will be inserted here -->
+                <!-- Routes Container (Accordion) -->
+                <div class="routes-container" id="routesContainer">
+                    <!-- Route accordion cards will be inserted here -->
+                </div>
             </div>
         </aside>
 
