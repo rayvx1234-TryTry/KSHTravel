@@ -510,7 +510,7 @@ html, body {
 }
 
 .route-card.active .route-card-content {
-    max-height: 800px;
+    max-height: 1000px;
 }
 
 .route-card-body {
@@ -587,26 +587,6 @@ html, body {
     font-size: 11px;
     color: var(--text-secondary);
     word-break: break-word;
-}
-
-.step-walk {
-    color: var(--walk-blue);
-}
-
-.step-bus {
-    color: #FF7F50;
-}
-
-.step-mrt-red {
-    color: var(--mrt-red);
-}
-
-.step-mrt-orange {
-    color: var(--mrt-orange);
-}
-
-.step-lightrail {
-    color: var(--lightrail-green);
 }
 
 /* ==================== Map Area ==================== */
