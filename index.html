@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高雄大眾運輸全能導航</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Control Panel -->
+        <aside class="control-panel" id="controlPanel">
+            <!-- Header -->
+            <div class="panel-header">
+                <h1 class="app-title">🚇 高雄運輸導航</h1>
+                <p class="app-subtitle">智慧轉乘規劃系統</p>
+            </div>
+
+            <!-- Origin & Destination -->
+            <div class="location-section">
+                <div class="location-input-group">
+                    <div class="location-input-wrapper">
+                        <label for="originInput" class="location-label">📍 起點</label>
+                        <input 
+                            type="text" 
+                            id="originInput" 
+                            class="location-input" 
+                            placeholder="輸入起點或點擊「使用目前位置」"
+                            autocomplete="off"
+                        >
+                        <button id="useCurrentLocationBtn" class="use-location-btn" title="使用目前位置">📍</button>
+                    </div>
+
+                    <button id="swapLocationsBtn" class="swap-locations-btn" title="對調起終點">⇅</button>
+
+                    <div class="location-input-wrapper">
+                        <label for="destinationInput" class="location-label">📍 終點</label>
+                        <input 
+                            type="text" 
+                            id="destinationInput" 
+                            class="location-input" 
+                            placeholder="輸入終點"
+                            autocomplete="off"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transit Filters -->
+            <div class="filter-section">
+                <label class="filter-label">篩選交通工具</label>
+                <div class="transit-filter">
+                    <button class="transit-filter-btn active" data-transit="mrt" title="捷運">🚇 捷運</button>
+                    <button class="transit-filter-btn active" data-transit="lightrail" title="輕軌">🚃 輕軌</button>
+                    <button class="transit-filter-btn active" data-transit="bus" title="公車">🚌 公車</button>
+                    <button class="transit-filter-btn active" data-transit="bike" title="YouBike">🚲 YouBike</button>
+                </div>
+            </div>
+
+            <!-- Search Button -->
+            <button id="searchBtn" class="search-button">搜尋最佳大眾運輸</button>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="loading-indicator hidden">
+                <div class="spinner"></div>
+                <span>正在規劃最佳路線...</span>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message hidden"></div>
+
+            <!-- Route Cards Container -->
+            <div class="routes-container" id="routesContainer">
+                <!-- Route cards will be inserted here -->
+            </div>
+        </aside>
+
+        <!-- Right Map Area -->
+        <main class="map-area" id="mapArea">
+            <div id="map" class="map-container"></div>
+            
+            <!-- Bottom Sheet for Mobile -->
+            <div class="bottom-sheet hidden" id="bottomSheet">
+                <div class="bottom-sheet-header">
+                    <div class="bottom-sheet-handle"></div>
+                    <h2>路線規劃結果</h2>
+                </div>
+                <div class="bottom-sheet-content" id="bottomSheetContent">
+                    <!-- Route cards will be duplicated here on mobile -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    
+    <!-- Custom Script -->
+    <script src="script.js"></script>
+</body>
+</html>
