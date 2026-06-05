@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高雄大眾運輸全能導航 V6</title>
+    <title>高雄大眾運輸全能導航 V7</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -15,7 +15,7 @@
             <div class="panel-header">
                 <div class="header-title">
                     <h1>🚇 K-Transit</h1>
-                    <p>高雄全自動智慧轉乘系統</p>
+                    <p>高雄自動化智慧轉乘系統</p>
                 </div>
                 <button id="themeToggle" class="theme-btn" title="切換夜間模式">🌙</button>
             </div>
@@ -53,8 +53,8 @@
 
                 <div class="filter-wrapper">
                     <div class="transit-filters">
-                        <button class="filter-tag active" data-transit="mrt">捷運</button>
-                        <button class="filter-tag active" data-transit="lightrail">輕軌</button>
+                        <button class="filter-tag active" data-transit="mrt">捷運 (MRT)</button>
+                        <button class="filter-tag active" data-transit="lightrail">輕軌 (LRT)</button>
                         <button class="filter-tag active" data-transit="bus">公車</button>
                         <button class="filter-tag active" data-transit="bike">YouBike</button>
                     </div>
@@ -68,15 +68,15 @@
                     <div id="errorMessage" class="error-box hidden"></div>
                     <div id="loadingIndicator" class="loading-box hidden">
                         <div class="spinner"></div>
-                        <p>跨線路網最佳解計算中...</p>
+                        <p>正在獨立分析高雄最佳路網解...</p>
                     </div>
                     <div id="routesContainer" class="routes-container">
-                        <p class="placeholder-text">請在上方輸入起訖點，開啟自動路網智慧導航。</p>
+                        <p class="placeholder-text">請在上方輸入起訖點，開啟智慧路網導航。</p>
                     </div>
                 </div>
 
                 <div id="detailView" class="view-block hidden">
-                    <button id="backToListBtn" class="back-list-btn">⬅️ 返回路線方案列表</button>
+                    <button id="backToListBtn" class="back-list-btn">⬅️ 返回方案列表</button>
                     <div id="detailContent" class="detail-content-wrapper"></div>
                 </div>
             </div>
