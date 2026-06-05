@@ -1,77 +1,148 @@
-// ==================== Configuration ====================
+// ==================== Configuration & Constants ====================
 const OSRM_API = 'https://router.project-osrm.org/route/v1';
 
-// ==================== Color Constants ====================
 const ROUTE_COLORS = {
     MRT_RED: '#E60012',
     MRT_ORANGE: '#FFA500',
     LIGHTRAIL: '#009E52',
     WALK: '#2ECC71',
     BUS: '#9B59B6',
-    BIKE: '#34495E'
+    BIKE: '#34495E',
+    TRANSFER: '#888888'
 };
 
-// ==================== Kaohsiung Transit Network ====================
-// 包含精準座標，防止路由拉回時亂飄
-const TRANSIT_STATIONS = [
-    { name: '左營', lat: 22.6879, lon: 120.3080, type: 'mrt', line: 'red' },
-    { name: '巨蛋', lat: 22.6725, lon: 120.3017, type: 'mrt', line: 'red' },
-    { name: '凹子底', lat: 22.6591, lon: 120.3025, type: 'mrt', line: 'red' },
-    { name: '高雄車站', lat: 22.6387, lon: 120.3137, type: 'mrt', line: 'red' },
-    { name: '美麗島', lat: 22.6353, lon: 120.3176, type: 'mrt', line: 'interchange', line2: 'orange' },
-    { name: '中央公園', lat: 22.6289, lon: 120.3202, type: 'mrt', line: 'red' },
-    { name: '三多商圈', lat: 22.6088, lon: 120.3256, type: 'mrt', line: 'red' },
-    { name: '西子灣', lat: 22.6462, lon: 120.3512, type: 'mrt', line: 'orange' },
-    { name: '衛武營', lat: 22.6259, lon: 120.3388, type: 'mrt', line: 'orange' },
-    { name: '哈瑪星', lat: 22.6420, lon: 120.2760, type: 'lightrail', line: 'green' },
-    { name: '駁二大義', lat: 22.6200, lon: 120.2850, type: 'lightrail', line: 'green' },
-    { name: '真愛碼頭', lat: 22.6214, lon: 120.2933, type: 'lightrail', line: 'green' },
-    { name: '光榮碼頭', lat: 22.6185, lon: 120.2974, type: 'lightrail', line: 'green' },
-    { name: '愛河之心', lat: 22.6595, lon: 120.3028, type: 'lightrail', line: 'green' }
-];
+// ==================== 高雄微型捷運路網 (Graph Nodes) ====================
+const STATIONS = {
+    'R16': { name: '左營', lat: 22.6879, lon: 120.3080, line: 'red' },
+    'R14': { name: '巨蛋', lat: 22.6725, lon: 120.3017, line: 'red' },
+    'R13': { name: '凹子底', lat: 22.6591, lon: 120.3025, line: 'red' },
+    'R11': { name: '高雄車站', lat: 22.6387, lon: 120.3137, line: 'red' },
+    'R10': { name: '美麗島', lat: 22.6353, lon: 120.3176, line: 'interchange' },
+    'R9':  { name: '中央公園', lat: 22.6289, lon: 120.3202, line: 'red' },
+    'R8':  { name: '三多商圈', lat: 22.6088, lon: 120.3256, line: 'red' },
+    'O1':  { name: '西子灣', lat: 22.6219, lon: 120.2743, line: 'orange' },
+    'O10': { name: '衛武營', lat: 22.6259, lon: 120.3388, line: 'orange' },
+    'C14': { name: '哈瑪星', lat: 22.6215, lon: 120.2755, line: 'green' },
+    'C12': { name: '駁二大義', lat: 22.6200, lon: 120.2850, line: 'green' },
+    'C11': { name: '真愛碼頭', lat: 22.6174, lon: 120.2925, line: 'green' },
+    'C10': { name: '光榮碼頭', lat: 22.6185, lon: 120.2974, line: 'green' },
+    'C24': { name: '愛河之心', lat: 22.6595, lon: 120.3028, line: 'green' }
+};
+
+// ==================== 路網連通性與時間權重 (Graph Edges) ====================
+// time 代表站與站之間的行車時間(分鐘)
+const ADJACENCY_LIST = {
+    'R16': [{ to: 'R14', time: 4, type: 'mrt', line: 'red' }],
+    'R14': [{ to: 'R16', time: 4, type: 'mrt', line: 'red' }, { to: 'R13', time: 2, type: 'mrt', line: 'red' }],
+    'R13': [{ to: 'R14', time: 2, type: 'mrt', line: 'red' }, { to: 'R11', time: 4, type: 'mrt', line: 'red' }, { to: 'C24', time: 4, type: 'walk', line: 'transfer' }],
+    'R11': [{ to: 'R13', time: 4, type: 'mrt', line: 'red' }, { to: 'R10', time: 2, type: 'mrt', line: 'red' }],
+    'R10': [{ to: 'R11', time: 2, type: 'mrt', line: 'red' }, { to: 'R9', time: 2, type: 'mrt', line: 'red' }, { to: 'O1', time: 6, type: 'mrt', line: 'orange' }, { to: 'O10', time: 8, type: 'mrt', line: 'orange' }],
+    'R9':  [{ to: 'R10', time: 2, type: 'mrt', line: 'red' }, { to: 'R8', time: 2, type: 'mrt', line: 'red' }],
+    'R8':  [{ to: 'R9', time: 2, type: 'mrt', line: 'red' }],
+    'O1':  [{ to: 'R10', time: 6, type: 'mrt', line: 'orange' }, { to: 'C14', time: 3, type: 'walk', line: 'transfer' }],
+    'O10': [{ to: 'R10', time: 8, type: 'mrt', line: 'orange' }],
+    'C14': [{ to: 'O1', time: 3, type: 'walk', line: 'transfer' }, { to: 'C12', time: 5, type: 'lightrail', line: 'green' }],
+    'C12': [{ to: 'C14', time: 5, type: 'lightrail', line: 'green' }, { to: 'C11', time: 2, type: 'lightrail', line: 'green' }],
+    'C11': [{ to: 'C12', time: 2, type: 'lightrail', line: 'green' }, { to: 'C10', time: 2, type: 'lightrail', line: 'green' }],
+    'C10': [{ to: 'C11', time: 2, type: 'lightrail', line: 'green' }],
+    'C24': [{ to: 'R13', time: 4, type: 'walk', line: 'transfer' }]
+};
 
 const KAOHSIUNG_CENTER = [22.6228, 120.3014];
 
 // ==================== Global State ====================
 let map = null;
 let mapLayerGroup = null;
-let currentRoutes = [];
-let selectedRouteId = null;
-let userLocation = null;
+let drawnPolylines = [];
 let selectedTransitTypes = new Set(['mrt', 'lightrail', 'bus', 'bike']);
 let originCoords = null;
 let destinationCoords = null;
-let drawnPolylines = [];
+let userLocation = null;
 
-// ==================== Utility Functions ====================
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
+// ==================== Core Dijkstra Routing Algorithm ====================
+// 尋找最近車站
+function getNearestStations(lat, lon, allowedTypes, maxStations = 2) {
+    let distances = [];
+    for (let id in STATIONS) {
+        const stn = STATIONS[id];
+        // 過濾使用者不要的交通工具
+        if (stn.line === 'red' || stn.line === 'orange' || stn.line === 'interchange') {
+            if (!allowedTypes.has('mrt')) continue;
+        }
+        if (stn.line === 'green') {
+            if (!allowedTypes.has('lightrail')) continue;
+        }
 
-function findNearestStation(lat, lon, allowedTypes) {
-    let nearest = null;
-    let minDist = Infinity;
-    for (let i = 0; i < TRANSIT_STATIONS.length; i++) {
-        const station = TRANSIT_STATIONS[i];
-        if (!allowedTypes.includes(station.type)) continue;
-        const dist = calculateDistance(lat, lon, station.lat, station.lon);
-        if (dist < minDist) { minDist = dist; nearest = station; }
+        const dist = Math.sqrt(Math.pow(lat - stn.lat, 2) + Math.pow(lon - stn.lon, 2));
+        distances.push({ id: id, dist: dist });
     }
-    return nearest ? { station: nearest, distance: minDist } : null;
+    distances.sort((a, b) => a.dist - b.dist);
+    return distances.slice(0, maxStations).map(item => item.id);
 }
 
-// ==================== OSRM 安全性呼叫 API ====================
-async function getOSRMRoute(startLat, startLon, endLat, endLon, profile = 'foot') {
+// 執行 Dijkstra 演算法找出捷運路網中最快的一條路
+function runDijkstra(startIds, endIds) {
+    let shortestPath = null;
+    let minTime = Infinity;
+
+    for (let startNode of startIds) {
+        let times = {};
+        let previous = {};
+        let unvisited = new Set(Object.keys(STATIONS));
+
+        for (let node of unvisited) times[node] = Infinity;
+        times[startNode] = 0;
+
+        while (unvisited.size > 0) {
+            let currNode = null;
+            for (let node of unvisited) {
+                if (currNode === null || times[node] < times[currNode]) {
+                    currNode = node;
+                }
+            }
+
+            if (times[currNode] === Infinity) break;
+            unvisited.delete(currNode);
+
+            if (!ADJACENCY_LIST[currNode]) continue;
+
+            for (let neighbor of ADJACENCY_LIST[currNode]) {
+                let altTime = times[currNode] + neighbor.time;
+                // 若換線，增加 3 分鐘轉乘懲罰時間
+                if (previous[currNode] && ADJACENCY_LIST[previous[currNode]].find(n => n.to === currNode).line !== neighbor.line) {
+                    altTime += 3; 
+                }
+
+                if (altTime < times[neighbor.to]) {
+                    times[neighbor.to] = altTime;
+                    previous[neighbor.to] = currNode;
+                }
+            }
+        }
+
+        for (let endNode of endIds) {
+            if (times[endNode] < minTime) {
+                minTime = times[endNode];
+                let path = [];
+                let curr = endNode;
+                while (curr) {
+                    path.unshift(curr);
+                    curr = previous[curr];
+                }
+                shortestPath = path;
+            }
+        }
+    }
+    return shortestPath;
+}
+
+// ==================== 安全的 OSRM 呼叫機制 ====================
+async function getSafeOSRMRoute(startLat, startLon, endLat, endLon, profile = 'foot') {
     try {
-        // 安全機制：如果是走路，強制用 foot 模式，OSRM 就絕對不可能走上高速道路
-        const url = `${OSRM_API}/${profile}/${startLon},${startLat};${endLon},${endLat}?steps=true&overview=full&geometries=geojson`;
+        // 【核心安全鎖】如果是行人，嚴格使用 foot，強制 OSRM 避開快速道路與高速公路！
+        const safeProfile = (profile === 'walk' || profile === 'foot') ? 'foot' : profile;
+        const url = `${OSRM_API}/${safeProfile}/${startLon},${startLat};${endLon},${endLat}?steps=true&overview=full&geometries=geojson`;
+        
         const response = await fetch(url);
         if (!response.ok) return null;
         const data = await response.json();
@@ -84,168 +155,131 @@ async function getOSRMRoute(startLat, startLon, endLat, endLon, profile = 'foot'
             duration: Math.ceil(route.duration / 60)
         };
     } catch (error) {
-        console.error('OSRM API Error:', error);
         return null;
     }
 }
 
-// ==================== 升級版智慧多線路路由引擎 ====================
+// ==================== 智慧組合路網生成 ====================
 async function generateSmartRoute(originLat, originLon, destLat, destLon) {
     const routes = [];
     const hasTrack = selectedTransitTypes.has('mrt') || selectedTransitTypes.has('lightrail');
 
-    // ------------------ 方案一：軌道運輸最佳組合 (捷運 + 安全人行/接駁) ------------------
+    // 方案一：捷運/輕軌 (Dijkstra 演算法)
     if (hasTrack) {
-        const allowedTypes = [];
-        if (selectedTransitTypes.has('mrt')) allowedTypes.push('mrt');
-        if (selectedTransitTypes.has('lightrail')) allowedTypes.push('lightrail');
+        const startIds = getNearestStations(originLat, originLon, selectedTransitTypes);
+        const endIds = getNearestStations(destLat, destLon, selectedTransitTypes);
 
-        const originNearest = findNearestStation(originLat, originLon, allowedTypes);
-        const destNearest = findNearestStation(destLat, destLon, allowedTypes);
-
-        if (originNearest && destNearest) {
-            const startStn = originNearest.station;
-            const endStn = destNearest.station;
+        if (startIds.length > 0 && endIds.length > 0) {
+            const bestPath = runDijkstra(startIds, endIds);
             
-            let steps = [];
-            let totalTime = 0;
-            let totalDistance = 0;
-            let allCoords = [];
+            if (bestPath && bestPath.length > 0) {
+                let steps = [];
+                let totalTime = 0;
+                let totalDistance = 0;
+                let allCoords = [];
+                let hasHeatWarning = false;
 
-            // Step 1: 起點 ➔ 車站 (強制使用 foot 安全走路路網，避開高架公路)
-            const walk1 = await getOSRMRoute(originLat, originLon, startStn.lat, startStn.lon, 'foot');
-            if (walk1) {
-                totalTime += walk1.duration;
-                totalDistance += parseFloat(walk1.distance);
-                allCoords = allCoords.concat(walk1.coordinates);
-                steps.push({
-                    type: 'walk', duration: walk1.duration, distance: walk1.distance + ' km',
-                    instruction: `從起點沿人行道安全步行至【${startStn.name}站】`, color: ROUTE_COLORS.WALK, coordinates: walk1.coordinates
+                const firstStn = STATIONS[bestPath[0]];
+                const lastStn = STATIONS[bestPath[bestPath.length - 1]];
+
+                // [安全步行段 1] 起點 ➔ 捷運站
+                const walk1 = await getSafeOSRMRoute(originLat, originLon, firstStn.lat, firstStn.lon, 'foot');
+                if (walk1) {
+                    totalTime += walk1.duration;
+                    allCoords = allCoords.concat(walk1.coordinates);
+                    if (parseFloat(walk1.distance) > 0.6) hasHeatWarning = true;
+                    steps.push({
+                        type: 'walk', duration: walk1.duration, distance: walk1.distance + ' km',
+                        instruction: `沿行人安全路線步行至【${firstStn.name}站】`, color: ROUTE_COLORS.WALK, coordinates: walk1.coordinates
+                    });
+                }
+
+                // [大眾運輸軌道段] 使用微型資料庫直接畫線，杜絕高速公路！
+                let currentLine = null;
+                let currentLineStart = null;
+                let currentLineCoords = [];
+                let transitTime = 5; // 基本等車
+
+                for (let i = 0; i < bestPath.length - 1; i++) {
+                    const stn1 = STATIONS[bestPath[i]];
+                    const stn2 = STATIONS[bestPath[i+1]];
+                    const edgeInfo = ADJACENCY_LIST[bestPath[i]].find(e => e.to === bestPath[i+1]);
+                    
+                    transitTime += edgeInfo.time;
+                    currentLineCoords.push([stn1.lat, stn1.lon]);
+                    if (i === bestPath.length - 2) currentLineCoords.push([stn2.lat, stn2.lon]);
+
+                    if (currentLine === null) {
+                        currentLine = edgeInfo.line;
+                        currentLineStart = stn1.name;
+                    } else if (currentLine !== edgeInfo.line || i === bestPath.length - 2) {
+                        // 換線或抵達終點，生成這一段的 Step
+                        const color = currentLine === 'red' ? ROUTE_COLORS.MRT_RED : currentLine === 'orange' ? ROUTE_COLORS.MRT_ORANGE : currentLine === 'green' ? ROUTE_COLORS.LIGHTRAIL : ROUTE_COLORS.TRANSFER;
+                        const action = currentLine === 'transfer' ? '站外轉乘步行' : `搭乘${currentLine === 'green' ? '輕軌' : '捷運'}`;
+                        steps.push({
+                            type: currentLine === 'transfer' ? 'walk' : 'mrt',
+                            duration: transitTime, distance: '軌道路網',
+                            instruction: `${action} 由【${currentLineStart}】至【${i === bestPath.length - 2 ? stn2.name : stn1.name}】`,
+                            color: color, coordinates: [...currentLineCoords]
+                        });
+                        
+                        // 重置為下一段路線
+                        currentLine = edgeInfo.line;
+                        currentLineStart = stn1.name;
+                        currentLineCoords = [[stn1.lat, stn1.lon]];
+                        transitTime = 4; // 下一班等車時間
+                    }
+                    allCoords.push([stn1.lat, stn1.lon]);
+                }
+                allCoords.push([lastStn.lat, lastStn.lon]);
+
+                // [安全步行段 2] 捷運站 ➔ 終點
+                const walk2 = await getSafeOSRMRoute(lastStn.lat, lastStn.lon, destLat, destLon, 'foot');
+                if (walk2) {
+                    totalTime += walk2.duration;
+                    allCoords = allCoords.concat(walk2.coordinates);
+                    if (parseFloat(walk2.distance) > 0.6) hasHeatWarning = true;
+                    steps.push({
+                        type: 'walk', duration: walk2.duration, distance: walk2.distance + ' km',
+                        instruction: `出站後沿行人安全路線步行至目的地`, color: ROUTE_COLORS.WALK, coordinates: walk2.coordinates
+                    });
+                }
+
+                routes.push({
+                    id: `route_transit_${Date.now()}`, title: `🚇 大眾捷運最佳轉乘 (Dijkstra 智慧導航)`,
+                    duration: totalTime.toString(), distance: '依路網計算', steps: steps, hasHeatWarning: hasHeatWarning, coordinates: allCoords
                 });
             }
-
-            // Step 2: 車站 ➔ 車站 (軌道線路模擬)
-            let midTransitCoords = [];
-            let transitInstruction = '';
-            let transitColor = ROUTE_COLORS.MRT_RED;
-            let transitTimeCalculated = 4; // 基礎等車時間
-
-            // 美麗島紅橘轉乘
-            if (startStn.type === 'mrt' && endStn.type === 'mrt' && startStn.line !== endStn.line && startStn.line !== 'interchange' && endStn.line !== 'interchange') {
-                const interchangeStn = TRANSIT_STATIONS.find(s => s.name === '美麗島');
-                const r1 = await getOSRMRoute(startStn.lat, startStn.lon, interchangeStn.lat, interchangeStn.lon, 'driving');
-                const r2 = await getOSRMRoute(interchangeStn.lat, interchangeStn.lon, endStn.lat, endStn.lon, 'driving');
-                if (r1 && r2) {
-                    midTransitCoords = r1.coordinates.concat(r2.coordinates);
-                    transitTimeCalculated += (r1.duration + r2.duration + 4);
-                    transitInstruction = `搭乘捷運至【美麗島站】站內轉乘，再搭至【${endStn.name}站】`;
-                    transitColor = startStn.line === 'red' ? ROUTE_COLORS.MRT_RED : ROUTE_COLORS.MRT_ORANGE;
-                }
-            } 
-            // 凹子底捷運轉輕軌
-            else if (startStn.type === 'mrt' && endStn.type === 'lightrail') {
-                const transferStn = TRANSIT_STATIONS.find(s => s.name === '凹子底');
-                const r1 = await getOSRMRoute(startStn.lat, startStn.lon, transferStn.lat, transferStn.lon, 'driving');
-                const r2 = await getOSRMRoute(transferStn.lat, transferStn.lon, endStn.lat, endStn.lon, 'foot');
-                if (r1 && r2) {
-                    midTransitCoords = r1.coordinates.concat(r2.coordinates);
-                    transitTimeCalculated += (r1.duration + r2.duration + 5);
-                    transitInstruction = `搭乘捷運紅線至【凹子底站】，出站前往【愛河之心站】轉乘輕軌至【${endStn.name}站】`;
-                    transitColor = ROUTE_COLORS.LIGHTRAIL;
-                }
-            }
-            // 直達線
-            else {
-                const r = await getOSRMRoute(startStn.lat, startStn.lon, endStn.lat, endStn.lon, startStn.type === 'mrt' ? 'driving' : 'foot');
-                if (r) {
-                    midTransitCoords = r.coordinates;
-                    transitTimeCalculated += r.duration;
-                    const lineLabel = startStn.type === 'mrt' ? `捷運${startStn.line === 'red' ? '紅線' : '橘線'}` : '環狀輕軌';
-                    transitInstruction = `搭乘${lineLabel}由【${startStn.name}站】直達【${endStn.name}站】`;
-                    transitColor = startStn.line === 'red' ? ROUTE_COLORS.MRT_RED : startStn.line === 'orange' ? ROUTE_COLORS.MRT_ORANGE : ROUTE_COLORS.LIGHTRAIL;
-                }
-            }
-
-            if (midTransitCoords.length > 0) {
-                totalTime += transitTimeCalculated;
-                allCoords = allCoords.concat(midTransitCoords);
-                steps.push({
-                    type: startStn.type, duration: transitTimeCalculated, distance: '市區軌道路網',
-                    instruction: transitInstruction, color: transitColor, coordinates: midTransitCoords
-                });
-            }
-
-            // Step 3: 車站 ➔ 目的地 (智慧判斷：如果距離過遠，不逼使用者走路，建議搭配公車或接駁)
-            const walk2 = await getOSRMRoute(endStn.lat, endStn.lon, destLat, destLon, 'foot'); // 再次強制安全步行
-            if (walk2) {
-                totalTime += walk2.duration;
-                totalDistance += parseFloat(walk2.distance);
-                allCoords = allCoords.concat(walk2.coordinates);
-                
-                // 如果出站後還要走超過 0.5 公里，在說明文字上提供警告與公車轉乘建議
-                const displayInstruction = parseFloat(walk2.distance) > 0.5 ? 
-                    `從【${endStn.name}站】步行至目的地 (距離較遠，亦可在站外轉乘公車或騎乘 YouBike 銜接)` : 
-                    `從【${endStn.name}站】安全步行至目的地`;
-
-                steps.push({
-                    type: 'walk', duration: walk2.duration, distance: walk2.distance + ' km',
-                    instruction: displayInstruction, color: ROUTE_COLORS.WALK, coordinates: walk2.coordinates
-                });
-            }
-
-            routes.push({
-                id: `route_transit_${Date.now()}`,
-                title: `🚇 大眾捷運/輕軌最佳複合方案`,
-                duration: totalTime.toString(),
-                departureTime: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                arrivalTime: new Date(Date.now() + totalTime * 60000).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                distance: totalDistance.toFixed(2) + ' km',
-                steps: steps,
-                hasHeatWarning: (walk2 && parseFloat(walk2.distance) > 0.5),
-                coordinates: allCoords
-            });
         }
     }
 
-    // ------------------ 方案二：公車路網方案 (走一般市區道路面) ------------------
+    // 方案二：公車路線 (直接使用 driving，但嚴格標記為公車)
     if (selectedTransitTypes.has('bus')) {
-        const busRoute = await getOSRMRoute(originLat, originLon, destLat, destLon, 'driving'); // 模擬市區道路平面
+        const busRoute = await getSafeOSRMRoute(originLat, originLon, destLat, destLon, 'driving');
         if (busRoute) {
-            const busTime = Math.ceil(busRoute.duration * 1.2) + 6; // 估算市區停靠時間
+            const busTime = Math.ceil(busRoute.duration * 1.3) + 8;
             routes.push({
-                id: `route_bus_${Date.now()}`,
-                title: `🚌 高雄市區公車直達方案`,
-                duration: busTime.toString(),
-                departureTime: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                arrivalTime: new Date(Date.now() + busTime * 60000).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                distance: busRoute.distance + ' km',
+                id: `route_bus_${Date.now()}`, title: `🚌 港都公車平面直達`,
+                duration: busTime.toString(), distance: busRoute.distance + ' km',
                 steps: [{
                     type: 'bus', duration: busTime, distance: busRoute.distance + ' km',
-                    instruction: '前往臨近公車站，搭乘高市公車走一般平面道路直達目的地', color: ROUTE_COLORS.BUS, coordinates: busRoute.coordinates
-                }],
-                hasHeatWarning: false,
-                coordinates: busRoute.coordinates
+                    instruction: '搭乘市區公車行駛平面車道直達（請以實際公車動態為準）', color: ROUTE_COLORS.BUS, coordinates: busRoute.coordinates
+                }], hasHeatWarning: false, coordinates: busRoute.coordinates
             });
         }
     }
 
-    // ------------------ 方案三：YouBike 2.0 方案 (走自行車道/安全平面) ------------------
-    if (selectedTransitTypes.has('bike')) {
-        const bikeRoute = await getOSRMRoute(originLat, originLon, destLat, destLon, 'bike');
-        if (bikeRoute) {
+    // 預防：純安全步行方案
+    if (routes.length === 0) {
+        const walkRoute = await getSafeOSRMRoute(originLat, originLon, destLat, destLon, 'foot');
+        if (walkRoute) {
             routes.push({
-                id: `route_bike_${Date.now()}`,
-                title: `🚲 YouBike 2.0 平面綠廊方案`,
-                duration: bikeRoute.duration.toString(),
-                departureTime: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                arrivalTime: new Date(Date.now() + bikeRoute.duration * 60000).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-                distance: bikeRoute.distance + ' km',
+                id: `route_walk_${Date.now()}`, title: `🚶 嚴格行人專用道步行`,
+                duration: walkRoute.duration.toString(), distance: walkRoute.distance + ' km',
                 steps: [{
-                    type: 'bike', duration: bikeRoute.duration, distance: bikeRoute.distance + ' km',
-                    instruction: '租借 YouBike 2.0，沿平面市區道路與自行車綠廊騎行，避開高速公路區', color: ROUTE_COLORS.BIKE, coordinates: bikeRoute.coordinates
-                }],
-                hasHeatWarning: parseFloat(bikeRoute.distance) > 2.0,
-                coordinates: bikeRoute.coordinates
+                    type: 'walk', duration: walkRoute.duration, distance: walkRoute.distance + ' km',
+                    instruction: '嚴格遵守行人路權，避開快速道路', color: ROUTE_COLORS.WALK, coordinates: walkRoute.coordinates
+                }], hasHeatWarning: parseFloat(walkRoute.distance) > 0.8, coordinates: walkRoute.coordinates
             });
         }
     }
@@ -253,93 +287,46 @@ async function generateSmartRoute(originLat, originLon, destLat, destLon) {
     return routes.sort((a, b) => parseInt(a.duration) - parseInt(b.duration));
 }
 
-// ==================== 以下為其餘功能模組，保持完美對應 ====================
+// ==================== Nominatim API 地名搜尋 ====================
 async function searchNominatim(query) {
     try {
-        const encodedQuery = encodeURIComponent(query);
-        const viewbox = '120.1,22.4,120.5,23.1';
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&viewbox=${viewbox}&bounded=1&limit=5&countrycodes=tw`;
-        const response = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'KaohsiungTransitApp/4.0' } });
-        if (!response.ok) return [];
-        const results = await response.json();
-        return results.map(item => ({
-            name: item.name || item.display_name.split(',')[0],
-            displayName: item.display_name,
-            lat: parseFloat(item.lat),
-            lon: parseFloat(item.lon)
-        }));
-    } catch (error) { return []; }
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=120.1,22.4,120.5,23.1&bounded=1&limit=5&countrycodes=tw`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'KSHTravel/5.0' } });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.map(item => ({ name: item.name || item.display_name.split(',')[0], displayName: item.display_name, lat: parseFloat(item.lat), lon: parseFloat(item.lon) }));
+    } catch (e) { return []; }
 }
 
 function showAutocompleteResults(results, locationType) {
-    const dropdownId = locationType === 'origin' ? 'originDropdown' : 'destinationDropdown';
-    const dropdown = document.getElementById(dropdownId);
+    const dropdown = document.getElementById(locationType === 'origin' ? 'originDropdown' : 'destinationDropdown');
     if (!dropdown) return;
     dropdown.innerHTML = '';
     if (results.length === 0) { dropdown.classList.add('hidden'); return; }
-    results.forEach(result => {
-        const item = document.createElement('div');
-        item.className = 'autocomplete-item';
-        item.innerHTML = `<div class="autocomplete-item-main">📍 ${result.name}</div><div class="autocomplete-item-sub">${result.displayName}</div>`;
-        item.addEventListener('click', () => selectAutocompleteItem(result, locationType));
-        dropdown.appendChild(item);
+    results.forEach(res => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.innerHTML = `<div class="autocomplete-item-main">📍 ${res.name}</div><div class="autocomplete-item-sub">${res.displayName}</div>`;
+        div.onclick = () => {
+            document.getElementById(locationType === 'origin' ? 'originInput' : 'destinationInput').value = res.name;
+            dropdown.classList.add('hidden');
+            if (locationType === 'origin') originCoords = { lat: res.lat, lon: res.lon }; else destinationCoords = { lat: res.lat, lon: res.lon };
+        };
+        dropdown.appendChild(div);
     });
     dropdown.classList.remove('hidden');
 }
 
-function selectAutocompleteItem(result, locationType) {
-    const inputId = locationType === 'origin' ? 'originInput' : 'destinationInput';
-    const dropdownId = locationType === 'origin' ? 'originDropdown' : 'destinationDropdown';
-    document.getElementById(inputId).value = result.name;
-    document.getElementById(dropdownId).classList.add('hidden');
-    if (locationType === 'origin') { originCoords = { lat: result.lat, lon: result.lon }; } else { destinationCoords = { lat: result.lat, lon: result.lon }; }
-}
-
 let autocompleteTimeout = null;
 function handleAutocompleteInput(e) {
-    const locationType = e.target.getAttribute('data-location-type');
+    const type = e.target.getAttribute('data-location-type');
     const query = e.target.value.trim();
     clearTimeout(autocompleteTimeout);
-    if (query.length < 2) {
-        const dropdown = document.getElementById(locationType === 'origin' ? 'originDropdown' : 'destinationDropdown');
-        if (dropdown) dropdown.classList.add('hidden');
-        return;
-    }
-    autocompleteTimeout = setTimeout(async () => {
-        const results = await searchNominatim(query);
-        showAutocompleteResults(results, locationType);
-    }, 300);
+    if (query.length < 2) { document.getElementById(type === 'origin' ? 'originDropdown' : 'destinationDropdown').classList.add('hidden'); return; }
+    autocompleteTimeout = setTimeout(async () => showAutocompleteResults(await searchNominatim(query), type), 300);
 }
 
-function showLoadingIndicator() {
-    const indicator = document.getElementById('loadingIndicator');
-    const searchBtn = document.getElementById('searchBtn');
-    if (indicator) indicator.classList.remove('hidden');
-    if (searchBtn) searchBtn.disabled = true;
-}
-
-// 修正：補上之前漏掉的隱藏 Loading Indicator 函數
-function hideLoadingIndicator() {
-    const indicator = document.getElementById('loadingIndicator');
-    const searchBtn = document.getElementById('searchBtn');
-    if (indicator) indicator.classList.add('hidden');
-    if (searchBtn) searchBtn.disabled = false;
-}
-
-function showErrorMessage(message) {
-    const errorEl = document.getElementById('errorMessage');
-    if (errorEl) {
-        errorEl.textContent = message;
-        errorEl.classList.remove('hidden');
-        setTimeout(() => errorEl.classList.add('hidden'), 5000);
-    }
-}
-
-function hideErrorMessage() {
-    const errorEl = document.getElementById('errorMessage');
-    if (errorEl) errorEl.classList.add('hidden');
-}
-
+// ==================== UI 與地圖繪製 ====================
 function clearMapLayers() {
     if (mapLayerGroup) mapLayerGroup.clearLayers();
     drawnPolylines = [];
@@ -349,16 +336,10 @@ function displayRoutes(routes) {
     const container = document.getElementById('routesContainer');
     if (!container) return;
     container.innerHTML = '';
-    currentRoutes = routes;
-    
     routes.forEach((route, index) => {
         const card = createRouteCard(route);
         container.appendChild(card);
-        if (index === 0) {
-            card.classList.add('active');
-            selectedRouteId = route.id;
-            drawRoute(route);
-        }
+        if (index === 0) { card.classList.add('active'); drawRoute(route); highlightRoute(route.id, true); }
     });
 }
 
@@ -367,108 +348,29 @@ function createRouteCard(route) {
     card.className = 'route-card';
     card.setAttribute('data-route-id', route.id);
     
-    const header = document.createElement('div');
-    header.className = 'route-card-header';
-    
-    const summary = document.createElement('div');
-    summary.className = 'route-summary';
-    
-    const title = document.createElement('div');
-    title.className = 'route-title';
-    title.style.fontWeight = 'bold';
-    title.textContent = route.title;
-    
-    const meta = document.createElement('div');
-    meta.className = 'route-meta';
-    
-    const timeBadge = document.createElement('div');
-    timeBadge.className = 'route-time-badge';
-    timeBadge.style.backgroundColor = '#005CAF';
-    timeBadge.style.color = '#fff';
-    timeBadge.style.padding = '2px 6px';
-    timeBadge.style.borderRadius = '4px';
-    timeBadge.textContent = `⏱️ ${route.duration}分`;
-    
-    const distanceBadge = document.createElement('div');
-    distanceBadge.className = 'route-distance-badge';
-    distanceBadge.textContent = `🛣️ ${route.distance}`;
-    
-    const transitIcons = document.createElement('div');
-    transitIcons.className = 'route-transit-icons';
-    route.steps.forEach(step => {
-        const icons = { 'walk': '🚶', 'mrt': '🚇', 'bus': '🚌', 'lightrail': '🚃', 'bike': '🚲' };
-        transitIcons.textContent += ' ' + (icons[step.type] || '📍');
-    });
-    
-    meta.appendChild(timeBadge);
-    meta.appendChild(distanceBadge);
-    meta.appendChild(transitIcons);
-    summary.appendChild(title);
-    summary.appendChild(meta);
-    header.appendChild(summary);
-    
-    if (route.hasHeatWarning) {
-        const warning = document.createElement('div');
-        warning.className = 'route-warning-inline';
-        warning.style.color = '#E67E22';
-        warning.style.fontSize = '12px';
-        warning.style.marginTop = '4px';
-        warning.innerHTML = `⚠️ 轉乘提示：出站後步行距離較長，可考慮轉公車或騎車接駁。`;
-        header.appendChild(warning);
-    }
-    
-    const content = document.createElement('div');
-    content.className = 'route-card-content';
-    const body = document.createElement('div');
-    body.className = 'route-card-body';
-    const stepsContainer = document.createElement('div');
-    stepsContainer.className = 'route-steps';
-    stepsContainer.style.borderLeft = '2px dashed #ccc';
-    stepsContainer.style.marginLeft = '10px';
-    stepsContainer.style.paddingLeft = '15px';
-    
-    route.steps.forEach((step) => {
-        const stepEl = document.createElement('div');
-        stepEl.className = 'route-step';
-        stepEl.style.cursor = 'pointer';
-        stepEl.style.marginBottom = '12px';
-        const icon = { 'walk': '🚶', 'mrt': '🚇', 'bus': '🚌', 'lightrail': '🚃', 'bike': '🚲' }[step.type] || '📍';
-        stepEl.innerHTML = `
-            <span class="step-icon" style="color: ${step.color}; font-size: 16px;">${icon}</span>
-            <span class="step-instruction" style="margin-left: 8px;">
-                <strong style="color: ${step.color}">${step.distance}</strong> - ${step.instruction}
-            </span>
-        `;
-        stepEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (step.coordinates && step.coordinates.length > 0) { map.flyTo(step.coordinates[0], 16, { duration: 1 }); }
-        });
-        stepsContainer.appendChild(stepEl);
-    });
-    
-    body.appendChild(stepsContainer);
-    content.appendChild(body);
-    card.appendChild(header);
-    card.appendChild(content);
-    
-    header.addEventListener('click', () => toggleCardExpansion(card, route));
-    card.addEventListener('mouseenter', () => highlightRoute(route.id, true));
-    card.addEventListener('mouseleave', () => highlightRoute(route.id, false));
-    return card;
-}
+    let stepsHtml = route.steps.map(s => {
+        const icon = { 'walk': '🚶', 'mrt': '🚇', 'bus': '🚌', 'lightrail': '🚃', 'bike': '🚲' }[s.type] || '📍';
+        return `<div class="route-step" style="margin-bottom:12px;cursor:pointer;">
+            <span class="step-icon" style="color:${s.color};font-size:16px;">${icon}</span>
+            <span class="step-instruction" style="margin-left:8px;"><strong style="color:${s.color}">${s.distance}</strong> - ${s.instruction}</span>
+        </div>`;
+    }).join('');
 
-function toggleCardExpansion(card, route) {
-    const isActive = card.classList.contains('active');
-    document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active'));
-    if (!isActive) {
-        card.classList.add('active');
-        selectedRouteId = route.id;
-        drawRoute(route);
-        highlightRoute(route.id, true);
-    } else {
-        selectedRouteId = null;
-        clearMapLayers();
-    }
+    card.innerHTML = `
+        <div class="route-card-header" style="cursor:pointer;">
+            <div class="route-title" style="font-weight:bold;">${route.title}</div>
+            <div class="route-meta">⏱️ ${route.duration}分 | 🛣️ ${route.distance}</div>
+            ${route.hasHeatWarning ? '<div style="color:#E67E22;font-size:12px;margin-top:4px;">☀️ 系統警告：步行段較長，請注意防曬與來車。</div>' : ''}
+        </div>
+        <div class="route-card-content"><div class="route-card-body"><div class="route-steps" style="border-left:2px dashed #ccc;padding-left:15px;margin-left:10px;">${stepsHtml}</div></div></div>
+    `;
+    
+    card.querySelector('.route-card-header').onclick = () => {
+        const isActive = card.classList.contains('active');
+        document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active'));
+        if (!isActive) { card.classList.add('active'); drawRoute(route); highlightRoute(route.id, true); } else { clearMapLayers(); }
+    };
+    return card;
 }
 
 function drawRoute(route) {
@@ -477,107 +379,59 @@ function drawRoute(route) {
     
     route.steps.forEach(step => {
         if (!step.coordinates || step.coordinates.length === 0) return;
-        const polylineOptions = { color: step.color, weight: 6, opacity: 0.8, smoothFactor: 1 };
-        if (step.type === 'walk') { polylineOptions.dashArray = '6, 8'; polylineOptions.weight = 4; }
-        const polyline = L.polyline(step.coordinates, polylineOptions);
+        const options = { color: step.color, weight: 6, opacity: 0.8, smoothFactor: 1 };
+        if (step.type === 'walk') { options.dashArray = '6, 8'; options.weight = 4; }
+        const polyline = L.polyline(step.coordinates, options);
         mapLayerGroup.addLayer(polyline);
         drawnPolylines.push({ line: polyline, defaultColor: step.color });
     });
     
-    L.circleMarker(route.coordinates[0], { radius: 8, fillColor: '#2ECC71', color: '#fff', weight: 2, fillOpacity: 0.9 }).bindPopup('📍 起點').addTo(mapLayerGroup);
-    L.circleMarker(route.coordinates[route.coordinates.length - 1], { radius: 8, fillColor: '#E74C3C', color: '#fff', weight: 2, fillOpacity: 0.9 }).bindPopup('🏁 終點').addTo(mapLayerGroup);
-    
-    if (map) { const bounds = L.latLngBounds(route.coordinates); map.fitBounds(bounds, { padding: [50, 50] }); }
+    L.circleMarker(route.coordinates[0], { radius: 8, fillColor: '#2ECC71', color: '#fff', weight: 2, fillOpacity: 0.9 }).bindPopup('起點').addTo(mapLayerGroup);
+    L.circleMarker(route.coordinates[route.coordinates.length - 1], { radius: 8, fillColor: '#E74C3C', color: '#fff', weight: 2, fillOpacity: 0.9 }).bindPopup('終點').addTo(mapLayerGroup);
+    if (map) map.fitBounds(L.latLngBounds(route.coordinates), { padding: [50, 50] });
 }
 
 function highlightRoute(routeId, isHighlight) {
-    const cards = document.querySelectorAll('.route-card');
-    cards.forEach(card => {
+    document.querySelectorAll('.route-card').forEach(card => {
         if (card.getAttribute('data-route-id') === routeId) {
-            if (isHighlight) {
-                card.style.boxShadow = '0 8px 24px rgba(0, 92, 175, 0.4)';
-                card.style.borderLeft = '5px solid #005CAF';
-                drawnPolylines.forEach(p => p.line.setStyle({ weight: 9, opacity: 1 }));
-            } else {
-                card.style.boxShadow = 'none';
-                card.style.borderLeft = 'none';
-                drawnPolylines.forEach(p => p.line.setStyle({ weight: 6, opacity: 0.8 }));
-            }
-        } else if (isHighlight) { card.style.opacity = '0.3'; } else { card.style.opacity = '1'; }
+            if (isHighlight) { card.style.borderLeft = '5px solid #005CAF'; drawnPolylines.forEach(p => p.line.setStyle({ weight: 9, opacity: 1 })); }
+        } else { card.style.opacity = isHighlight ? '0.3' : '1'; }
     });
 }
 
-function handleSwapLocations() {
-    const origin = document.getElementById('originInput');
-    const destination = document.getElementById('destinationInput');
-    const temp = origin.value; origin.value = destination.value; destination.value = temp;
-    const tempCoords = originCoords; originCoords = destinationCoords; destinationCoords = tempCoords;
-}
-
+// ==================== Events & Initialization ====================
 async function handleSearch() {
-    hideErrorMessage();
-    const origin = document.getElementById('originInput').value.trim();
-    const destination = document.getElementById('destinationInput').value.trim();
-    if (!origin || !destination) { showErrorMessage('請輸入起點和終點地名'); return; }
-    if (!originCoords || !destinationCoords) { showErrorMessage('請點選下拉選單提供的精確地點，以便定位座標'); return; }
-    if (selectedTransitTypes.size === 0) { showErrorMessage('請至少勾選一種交通工具進行篩選'); return; }
+    document.getElementById('errorMessage').classList.add('hidden');
+    if (!originCoords || !destinationCoords) { document.getElementById('errorMessage').textContent = '請點選下拉選單的精確地點'; document.getElementById('errorMessage').classList.remove('hidden'); return; }
     
-    showLoadingIndicator();
+    document.getElementById('loadingIndicator').classList.remove('hidden');
     try {
         clearMapLayers();
         const routes = await generateSmartRoute(originCoords.lat, originCoords.lon, destinationCoords.lat, destinationCoords.lon);
-        if (routes.length === 0) { showErrorMessage('無法建立有效路線，請更改篩選標籤'); } else { displayRoutes(routes); }
-    } catch (error) { showErrorMessage('搜尋失敗，請確認網路連線或稍後重試'); } finally { hideLoadingIndicator(); }
-}
-
-function handleTransitFilterChange(e) {
-    const btn = e.target.closest('.transit-filter-btn') || e.target;
-    const transitType = btn.getAttribute('data-transit');
-    btn.classList.toggle('active');
-    if (btn.classList.contains('active')) { selectedTransitTypes.add(transitType); } else { selectedTransitTypes.delete(transitType); }
-}
-
-function handleUseCurrentLocation() {
-    if (userLocation) {
-        document.getElementById('originInput').value = `我的目前位置`;
-        originCoords = { lat: userLocation.lat, lon: userLocation.lng };
-        const drop = document.getElementById('originDropdown'); if (drop) drop.classList.add('hidden');
-    } else { showErrorMessage('無法取得定位，請確認瀏覽器是否開啟 GPS 授權'); }
+        if (routes.length === 0) throw new Error('No Route');
+        displayRoutes(routes);
+    } catch (e) { document.getElementById('errorMessage').textContent = '搜尋失敗'; document.getElementById('errorMessage').classList.remove('hidden'); }
+    document.getElementById('loadingIndicator').classList.add('hidden');
 }
 
 function setupEventListeners() {
-    document.getElementById('swapLocationsBtn').addEventListener('click', handleSwapLocations);
     document.getElementById('searchBtn').addEventListener('click', handleSearch);
-    document.getElementById('useCurrentLocationBtn').addEventListener('click', handleUseCurrentLocation);
-    document.querySelectorAll('.transit-filter-btn').forEach(btn => btn.addEventListener('click', handleTransitFilterChange));
     document.querySelectorAll('.location-input').forEach(input => input.addEventListener('input', handleAutocompleteInput));
-    document.getElementById('originInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
-    document.getElementById('destinationInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
-    document.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('location-input')) {
-            const originDrop = document.getElementById('originDropdown'); const destDrop = document.getElementById('destinationDropdown');
-            if (originDrop) originDrop.classList.add('hidden'); if (destDrop) destDrop.classList.add('hidden');
-        }
+    document.getElementById('swapLocationsBtn').addEventListener('click', () => {
+        const temp = document.getElementById('originInput').value; document.getElementById('originInput').value = document.getElementById('destinationInput').value; document.getElementById('destinationInput').value = temp;
+        const tc = originCoords; originCoords = destinationCoords; destinationCoords = tc;
     });
+    document.querySelectorAll('.transit-filter-btn').forEach(btn => btn.addEventListener('click', (e) => {
+        const b = e.target.closest('.transit-filter-btn'); b.classList.toggle('active');
+        if (b.classList.contains('active')) selectedTransitTypes.add(b.getAttribute('data-transit')); else selectedTransitTypes.delete(b.getAttribute('data-transit'));
+    }));
 }
 
-function initializeMap() {
+window.addEventListener('load', () => {
     if (map !== null) return;
     map = L.map('map').setView(KAOHSIUNG_CENTER, 13);
     mapLayerGroup = L.layerGroup().addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
-    setTimeout(() => { if (map) map.invalidateSize(); }, 200);
-    map.locate({ setView: false, maxZoom: 16 });
-    map.on('locationfound', (e) => {
-        userLocation = e.latlng;
-        L.circleMarker(e.latlng, { radius: 6, fillColor: '#005CAF', color: '#fff', weight: 2, fillOpacity: 0.9 }).bindPopup('📍 您目前所在的概略位置').addTo(map);
-    });
-}
-
-function handleResponsive() {
-    const controlPanel = document.getElementById('controlPanel');
-    if (controlPanel) { if (window.innerWidth <= 768) { controlPanel.classList.add('collapsed'); } else { controlPanel.classList.remove('collapsed'); } }
-}
-
-window.addEventListener('resize', handleResponsive);
-window.addEventListener('load', () => { initializeMap(); setupEventListeners(); handleResponsive(); });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    setTimeout(() => map.invalidateSize(), 200);
+    setupEventListeners();
+});
