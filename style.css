@@ -89,3 +89,24 @@ body, html { width: 100%; height: 100%; background: var(--bg-main); overflow: hi
 [data-theme="dark"] .leaflet-control-attribution {
     filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
+/* 🌟 修復：夜間模式字體顏色與卡片底色對比度 */
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .detail-main-title,
+[data-theme="dark"] .step-title {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .card-meta,
+[data-theme="dark"] .sub-step-details,
+[data-theme="dark"] .meta-label,
+[data-theme="dark"] .meta-value {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .click-hint {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .route-card:hover {
+    background-color: #334155;
+}
