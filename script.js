@@ -1,13 +1,14 @@
 const OSRM_API = 'https://router.project-osrm.org/route/v1';
 const KAOHSIUNG_CENTER = [22.6228, 120.3014];
 
-// 🛰️ 1. 自建精準在地地標庫：防止開源圖資定位偏移 (解決高師大附中被定到本部的Bug)
+// 🛰️ 1. 自建精準在地地標庫：座標已徹底校正至真實大門位置
 const LOCAL_ALIASES = [
-    { name: '高師大附中大門', lat: 22.6190, lon: 120.3263 },
-    { name: '高師大附屬高級中學', lat: 22.6190, lon: 120.3263 },
+    { name: '高師大附中大門', lat: 22.6260, lon: 120.3236 },
+    { name: '高師大附屬高級中學', lat: 22.6260, lon: 120.3236 },
     { name: '高雄榮民總醫院 (榮總)', lat: 22.6785, lon: 120.3195 }
 ];
 
+// 🚉 2. 修正所有輕軌站的實體經緯度 (解決全體往南偏移的嚴重 Bug)
 const STATIONS_DATABASE = {
     mrt: [
         { name: '左營高鐵站', lat: 22.6874, lon: 120.3076, line: '紅線', padding: 5 },
@@ -23,10 +24,10 @@ const STATIONS_DATABASE = {
         { name: '衛武營站', lat: 22.6248, lon: 120.3404, line: '橘線', padding: 4 }
     ],
     lightrail: [
-        { name: 'C33 衛生局站', lat: 22.6174, lon: 120.3262, line: '環狀輕軌', padding: 2 },
-        { name: 'C32 凱旋公園站', lat: 22.6247, lon: 120.3259, line: '環狀輕軌', padding: 2 },
-        { name: 'C34 五權國小站', lat: 22.6125, lon: 120.3276, line: '環狀輕軌', padding: 2 },
-        { name: 'C35 凱旋武昌站', lat: 22.6074, lon: 120.3270, line: '環狀輕軌', padding: 2 },
+        { name: 'C32 凱旋公園站', lat: 22.6295, lon: 120.3233, line: '環狀輕軌', padding: 2 },
+        { name: 'C33 衛生局站', lat: 22.6246, lon: 120.3239, line: '環狀輕軌', padding: 2 },
+        { name: 'C34 五權國小站', lat: 22.6165, lon: 120.3248, line: '環狀輕軌', padding: 2 },
+        { name: 'C35 凱旋武昌站', lat: 22.6075, lon: 120.3258, line: '環狀輕軌', padding: 2 },
         { name: 'C24 愛河之心站', lat: 22.6595, lon: 120.3028, line: '環狀輕軌', padding: 2 },
         { name: 'C14 哈瑪星站', lat: 22.6215, lon: 120.2720, line: '環狀輕軌', padding: 2 },
         { name: 'C3 前鎮之星站', lat: 22.5966, lon: 120.3150, line: '環狀輕軌', padding: 2 },
@@ -89,10 +90,8 @@ async function fetchAddressSuggestions(query, type) {
     const dropdown = document.getElementById(`${type}Dropdown`);
     dropdown.innerHTML = '';
     
-    // 🛰️ 攔截：先比對在地精確資料庫
     let combinedResults = LOCAL_ALIASES.filter(item => item.name.includes(query) || query.includes(item.name));
 
-    // 呼叫 OSM API
     try {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=120.1,22.4,120.5,23.1&bounded=1&limit=5`;
         const res = await fetch(url);
@@ -155,17 +154,12 @@ async function getRouteOSRM(lat1, lon1, lat2, lon2, profile = 'foot') {
     } catch (e) { return null; }
 }
 
-// 🚀 核心升級：真實步行權重對決演算法 (解決只看直線距離的 Bug)
 async function getTrueBestStation(coords, stations) {
-    // 先抓出「直線距離」最近的 2 個站點
     let sorted = [...stations].sort((a,b) => getDistanceKM(coords.lat, coords.lon, a.lat, a.lon) - getDistanceKM(coords.lat, coords.lon, b.lat, b.lon));
     let top2 = sorted.slice(0, 2);
-
-    // 分別去計算「實際走過去的時間」
     let walk1 = await getRouteOSRM(coords.lat, coords.lon, top2[0].lat, top2[0].lon, 'foot');
     let walk2 = await getRouteOSRM(coords.lat, coords.lon, top2[1].lat, top2[1].lon, 'foot');
 
-    // 誰真的走比較快，就回傳誰！
     if (walk1 && walk2 && walk2.rawMins < walk1.rawMins) {
         return { station: top2[1], walkLeg: walk2 };
     }
