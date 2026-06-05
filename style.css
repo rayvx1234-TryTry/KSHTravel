@@ -1,138 +1,157 @@
 :root {
-    --bg-main: #f4f7fe;
-    --bg-panel: rgba(255, 255, 255, 0.9);
-    --text-main: #2b3674;
-    --text-sub: #a3aed1;
-    --border: #e0e5f2;
-    --primary: #4318ff;
-    --primary-hover: #3311db;
-    --shadow: 0 18px 40px rgba(112, 144, 176, 0.12);
+    --bg-main: #f0f4f9;
+    --bg-panel: rgba(255, 255, 255, 0.95);
+    --text-main: #1e293b;
+    --text-sub: #64748b;
+    --border: #cbd5e1;
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
     --card-bg: #ffffff;
-    --card-hover: #fcfcfc;
-    --mrt-red: #E60012;
-    --mrt-orange: #FFA500;
-    --mrt-green: #009E52;
+    --dropdown-hover: #f1f5f9;
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    
+    /* 交通色彩 */
+    --color-mrt: #e11d48;
+    --color-lightrail: #16a34a;
+    --color-bus: #9333ea;
+    --color-bike: #475569;
+    --color-walk: #0ea5e9;
 }
 
 [data-theme="dark"] {
-    --bg-main: #0b1437;
-    --bg-panel: rgba(17, 28, 68, 0.95);
-    --text-main: #ffffff;
-    --text-sub: #8f9bba;
-    --border: #2b3674;
-    --primary: #7551ff;
-    --primary-hover: #4318ff;
-    --shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
-    --card-bg: #111c44;
-    --card-hover: #1a2757;
+    --bg-main: #0f172a;
+    --bg-panel: rgba(15, 23, 42, 0.95);
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+    --border: #334155;
+    --primary: #38bdf8;
+    --primary-hover: #7dd3fc;
+    --card-bg: #1e293b;
+    --dropdown-hover: #334155;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; }
-
-body, html { width: 100%; height: 100%; background: var(--bg-main); transition: background 0.3s; }
-
-.app-container { display: flex; height: 100vh; overflow: hidden; }
+body, html { width: 100%; height: 100%; background: var(--bg-main); transition: background 0.3s; overflow: hidden; }
+.app-container { display: flex; height: 100vh; }
 
 /* === Control Panel === */
 .control-panel {
     width: 400px; height: 100%; display: flex; flex-direction: column;
-    background: var(--bg-panel); backdrop-filter: blur(10px);
+    background: var(--bg-panel); backdrop-filter: blur(12px);
     border-right: 1px solid var(--border); box-shadow: var(--shadow); z-index: 1000;
 }
 
-.panel-header {
-    padding: 24px 24px 16px; display: flex; justify-content: space-between; align-items: center;
-}
-.header-title h1 { font-size: 24px; color: var(--text-main); font-weight: 900; letter-spacing: -0.5px; }
+.panel-header { padding: 24px 20px 12px; display: flex; justify-content: space-between; align-items: center; }
+.header-title h1 { font-size: 24px; color: var(--text-main); font-weight: 900; }
 .header-title p { font-size: 13px; color: var(--text-sub); }
 
-.icon-btn {
-    background: none; border: none; font-size: 20px; cursor: pointer;
-    padding: 8px; border-radius: 50%; transition: 0.2s; background: var(--card-bg); border: 1px solid var(--border);
+.theme-btn {
+    background: var(--card-bg); border: 1px solid var(--border); font-size: 18px;
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
 }
-.icon-btn:hover { transform: scale(1.1); }
-.icon-btn.small { font-size: 16px; padding: 6px; }
+.theme-btn:hover { transform: scale(1.05); background: var(--dropdown-hover); }
+
+/* === Avatar Selector === */
+.avatar-section { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
+.section-label { font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.avatar-picker { display: flex; gap: 6px; }
+.avatar-btn {
+    font-size: 18px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid transparent;
+    background: var(--card-bg); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.avatar-btn:hover { transform: scale(1.1); }
+.avatar-btn.active { border-color: var(--primary); background: var(--dropdown-hover); box-shadow: 0 0 8px rgba(2, 132, 199, 0.4); }
 
 /* === Search Section === */
-.search-section { padding: 0 24px 20px; position: relative; }
-.input-group { position: relative; margin-bottom: 12px; z-index: 10; }
-.input-group:first-child { z-index: 11; }
+.search-section { padding: 0 20px 16px; position: relative; border-bottom: 1px solid var(--border); }
+.input-group { position: relative; margin-bottom: 10px; }
 .input-wrapper {
     display: flex; align-items: center; background: var(--card-bg);
-    border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; transition: 0.2s;
+    border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px; transition: 0.2s;
 }
-.input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.1); }
+.input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }
 .input-wrapper input {
     flex: 1; border: none; outline: none; background: transparent; color: var(--text-main);
-    padding: 8px; font-size: 15px;
+    padding: 8px; font-size: 14px;
 }
-.input-wrapper .icon { font-size: 18px; margin-right: 4px; }
+.input-icon { font-size: 16px; }
+.action-icon-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; transition: 0.2s; }
+.action-icon-btn:hover { transform: scale(1.2); }
 
 .swap-btn {
-    position: absolute; right: 40px; top: 46px; width: 32px; height: 32px;
+    position: absolute; right: 36px; top: 38px; width: 28px; height: 28px;
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%;
-    cursor: pointer; z-index: 12; color: var(--text-main); transition: 0.3s;
+    cursor: pointer; z-index: 10; color: var(--text-main); font-weight: bold; transition: 0.3s;
 }
-.swap-btn:hover { transform: rotate(180deg); background: var(--primary); color: white; border-color: var(--primary); }
+.swap-btn:hover { transform: rotate(180deg); background: var(--primary); color: white; }
 
-.primary-btn {
-    width: 100%; padding: 14px; background: var(--primary); color: white;
-    border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
-    cursor: pointer; transition: 0.2s; margin-top: 10px; box-shadow: 0 8px 16px rgba(67, 24, 255, 0.2);
-}
-.primary-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
-
-/* === Dropdown === */
+/* === Autocomplete Dropdown (關鍵修正) === */
 .autocomplete-dropdown {
     position: absolute; top: calc(100% + 4px); left: 0; width: 100%;
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-    box-shadow: var(--shadow); max-height: 200px; overflow-y: auto; z-index: 100;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15); max-height: 210px; overflow-y: auto; z-index: 9999 !important;
 }
-.autocomplete-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--border); }
-.autocomplete-item:hover { background: var(--bg-main); }
+.autocomplete-dropdown.hidden { display: none !important; }
+.autocomplete-item { padding: 12px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover { background: var(--dropdown-hover); }
 .autocomplete-item-main { font-weight: 700; color: var(--text-main); font-size: 14px; }
-.autocomplete-item-sub { color: var(--text-sub); font-size: 12px; margin-top: 2px; }
+.autocomplete-item-sub { color: var(--text-sub); font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* === Results Area === */
-.results-area { flex: 1; padding: 0 24px 24px; overflow-y: auto; }
-.status-message { padding: 12px; border-radius: 8px; font-size: 14px; text-align: center; margin-bottom: 12px; }
-.status-message.error { background: rgba(230,0,18,0.1); color: var(--mrt-red); }
-.hidden { display: none !important; }
-
-/* === Route Cards === */
-.route-card {
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
-    margin-bottom: 16px; overflow: hidden; transition: 0.2s; cursor: pointer;
+/* === Filter Tags === */
+.filter-wrapper { margin-top: 8px; margin-bottom: 12px; }
+.transit-filters { display: flex; gap: 6px; }
+.filter-tag {
+    flex: 1; padding: 8px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-sub); font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s;
 }
-.route-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--primary); }
-.route-card.active { border: 2px solid var(--primary); }
+.filter-tag.active[data-transit="mrt"] { background: rgba(225,29,72,0.1); border-color: var(--color-mrt); color: var(--color-mrt); }
+.filter-tag.active[data-transit="lightrail"] { background: rgba(22,163,74,0.1); border-color: var(--color-lightrail); color: var(--color-lightrail); }
+.filter-tag.active[data-transit="bus"] { background: rgba(147,51,234,0.1); border-color: var(--color-bus); color: var(--color-bus); }
+.filter-tag.active[data-transit="bike"] { background: rgba(71,85,105,0.1); border-color: var(--color-bike); color: var(--color-bike); }
 
+.primary-search-btn {
+    width: 100%; padding: 14px; background: var(--primary); color: white; border: none;
+    border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s;
+}
+.primary-search-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+/* === Results Container & Cards === */
+.results-area { flex: 1; padding: 16px 20px; overflow-y: auto; }
+.error-box { padding: 12px; background: rgba(225,29,72,0.1); color: var(--color-mrt); border-radius: 8px; font-size: 13px; text-align: center; margin-bottom: 12px; }
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; color: var(--text-sub); font-size: 13px; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.route-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; transition: 0.2s; cursor: pointer; }
+.route-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.route-card.active { border-color: var(--primary); box-shadow: var(--shadow); }
 .card-header { padding: 16px; }
-.route-type-badge {
-    display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 8px;
-}
-.route-title { font-size: 20px; font-weight: 900; color: var(--text-main); margin-bottom: 8px; }
-.route-summary { display: flex; gap: 12px; color: var(--text-sub); font-size: 13px; font-weight: 500; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+.card-title { font-size: 18px; font-weight: 900; color: var(--text-main); margin-bottom: 6px; }
+.card-meta { font-size: 12px; color: var(--text-sub); display: flex; gap: 10px; }
 
 .card-details { display: none; padding: 16px; border-top: 1px solid var(--border); background: var(--bg-main); }
 .route-card.active .card-details { display: block; }
 
-.timeline-step { display: flex; margin-bottom: 16px; position: relative; }
-.timeline-step:last-child { margin-bottom: 0; }
-.step-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 14px; z-index: 2; }
-.step-content { margin-left: 12px; flex: 1; }
-.step-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
-.step-desc { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.4; }
+.step-item { display: flex; gap: 12px; margin-bottom: 12px; position: relative; }
+.step-item:last-child { margin-bottom: 0; }
+.step-badge { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; z-index: 2; }
+.step-info { flex: 1; }
+.step-text { font-size: 13px; font-weight: 700; color: var(--text-main); }
+.step-subtext { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
 
-/* === Map === */
-.map-area { flex: 1; height: 100%; }
+/* === Map Section === */
+.map-area { flex: 1; height: 100%; position: relative; }
 #map { width: 100%; height: 100%; }
 
-/* === 人偶 Marker === */
-.user-avatar { font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); animation: bounce 2s infinite; }
-@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+/* 動態小人偶樣式 */
+.dynamic-avatar-icon { font-size: 32px; text-shadow: 0 2px 5px rgba(0,0,0,0.25); text-align: center; animation: bounce 2s infinite; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.hidden { display: none !important; }
