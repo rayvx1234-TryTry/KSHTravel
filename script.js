@@ -1,6 +1,13 @@
 const OSRM_API = 'https://router.project-osrm.org/route/v1';
 const KAOHSIUNG_CENTER = [22.6228, 120.3014];
 
+// 🛰️ 1. 自建精準在地地標庫：防止開源圖資定位偏移 (解決高師大附中被定到本部的Bug)
+const LOCAL_ALIASES = [
+    { name: '高師大附中大門', lat: 22.6190, lon: 120.3263 },
+    { name: '高師大附屬高級中學', lat: 22.6190, lon: 120.3263 },
+    { name: '高雄榮民總醫院 (榮總)', lat: 22.6785, lon: 120.3195 }
+];
+
 const STATIONS_DATABASE = {
     mrt: [
         { name: '左營高鐵站', lat: 22.6874, lon: 120.3076, line: '紅線', padding: 5 },
@@ -40,7 +47,6 @@ function initMap() {
     mapLayers = L.layerGroup().addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     
-    // 初始化主題
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
 }
@@ -80,31 +86,43 @@ document.getElementById('useLocationBtn').addEventListener('click', () => {
 
 async function fetchAddressSuggestions(query, type) {
     if (query.length < 2) return;
+    const dropdown = document.getElementById(`${type}Dropdown`);
+    dropdown.innerHTML = '';
+    
+    // 🛰️ 攔截：先比對在地精確資料庫
+    let combinedResults = LOCAL_ALIASES.filter(item => item.name.includes(query) || query.includes(item.name));
+
+    // 呼叫 OSM API
     try {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=120.1,22.4,120.5,23.1&bounded=1&limit=5`;
         const res = await fetch(url);
-        if (!res.ok) return;
-        const data = await res.json();
-        const dropdown = document.getElementById(`${type}Dropdown`);
-        dropdown.innerHTML = '';
-        if (data.length === 0) { dropdown.classList.add('hidden'); return; }
-        
-        data.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'autocomplete-item';
-            const shortName = item.name || item.display_name.split(',')[0];
-            div.textContent = `📍 ${shortName}`;
-            div.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                document.getElementById(`${type}Input`).value = shortName;
-                if (type === 'origin') originCoords = { lat: parseFloat(item.lat), lon: parseFloat(item.lon) };
-                else destCoords = { lat: parseFloat(item.lat), lon: parseFloat(item.lon) };
-                dropdown.classList.add('hidden');
+        if (res.ok) {
+            const data = await res.json();
+            data.forEach(o => {
+                const shortName = o.name || o.display_name.split(',')[0];
+                if (!combinedResults.some(c => c.name === shortName)) {
+                    combinedResults.push({ name: shortName, lat: parseFloat(o.lat), lon: parseFloat(o.lon) });
+                }
             });
-            dropdown.appendChild(div);
-        });
-        dropdown.classList.remove('hidden');
+        }
     } catch (e) {}
+
+    if (combinedResults.length === 0) { dropdown.classList.add('hidden'); return; }
+    
+    combinedResults.slice(0, 5).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.textContent = `📍 ${item.name}`;
+        div.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            document.getElementById(`${type}Input`).value = item.name;
+            if (type === 'origin') originCoords = { lat: item.lat, lon: item.lon };
+            else destCoords = { lat: item.lat, lon: item.lon };
+            dropdown.classList.add('hidden');
+        });
+        dropdown.appendChild(div);
+    });
+    dropdown.classList.remove('hidden');
 }
 
 let debounceTimer;
@@ -137,6 +155,23 @@ async function getRouteOSRM(lat1, lon1, lat2, lon2, profile = 'foot') {
     } catch (e) { return null; }
 }
 
+// 🚀 核心升級：真實步行權重對決演算法 (解決只看直線距離的 Bug)
+async function getTrueBestStation(coords, stations) {
+    // 先抓出「直線距離」最近的 2 個站點
+    let sorted = [...stations].sort((a,b) => getDistanceKM(coords.lat, coords.lon, a.lat, a.lon) - getDistanceKM(coords.lat, coords.lon, b.lat, b.lon));
+    let top2 = sorted.slice(0, 2);
+
+    // 分別去計算「實際走過去的時間」
+    let walk1 = await getRouteOSRM(coords.lat, coords.lon, top2[0].lat, top2[0].lon, 'foot');
+    let walk2 = await getRouteOSRM(coords.lat, coords.lon, top2[1].lat, top2[1].lon, 'foot');
+
+    // 誰真的走比較快，就回傳誰！
+    if (walk1 && walk2 && walk2.rawMins < walk1.rawMins) {
+        return { station: top2[1], walkLeg: walk2 };
+    }
+    return { station: top2[0], walkLeg: walk1 };
+}
+
 async function runRoutePlanning() {
     if (!originCoords || !destCoords) return alert('請確認起訖點皆已輸入並從選單選擇！');
     document.getElementById('detailView').classList.add('hidden'); document.getElementById('listView').classList.remove('hidden');
@@ -146,21 +181,20 @@ async function runRoutePlanning() {
     const outputRoutes = [];
 
     if (activeFilters.has('mrt')) {
-        let sortedStart = [...STATIONS_DATABASE.mrt].sort((a,b) => getDistanceKM(originCoords.lat, originCoords.lon, a.lat, a.lon) - getDistanceKM(originCoords.lat, originCoords.lon, b.lat, b.lon));
-        let sortedEnd = [...STATIONS_DATABASE.mrt].sort((a,b) => getDistanceKM(destCoords.lat, destCoords.lon, a.lat, a.lon) - getDistanceKM(destCoords.lat, destCoords.lon, b.lat, b.lon));
-        let st1 = sortedStart[0], st2 = sortedEnd[0];
+        let bestStart = await getTrueBestStation(originCoords, STATIONS_DATABASE.mrt);
+        let bestEnd = await getTrueBestStation(destCoords, STATIONS_DATABASE.mrt);
+        let st1 = bestStart.station, st2 = bestEnd.station;
+        let leg1 = bestStart.walkLeg, leg3 = bestEnd.walkLeg;
         
-        if (st1.name !== st2.name) {
+        if (st1.name !== st2.name && leg1 && leg3) {
             let isTransfer = (st1.line === '紅線' && st2.line === '橘線') || (st1.line === '橘線' && st2.line === '紅線');
             
             if (isTransfer) {
                 let hub = STATIONS_DATABASE.mrt.find(s => s.name === '美麗島站');
-                const leg1 = await getRouteOSRM(originCoords.lat, originCoords.lon, st1.lat, st1.lon, 'foot');
                 const leg2a = await getRouteOSRM(st1.lat, st1.lon, hub.lat, hub.lon, 'driving');
                 const leg2b = await getRouteOSRM(hub.lat, hub.lon, st2.lat, st2.lon, 'driving');
-                const leg3 = await getRouteOSRM(st2.lat, st2.lon, destCoords.lat, destCoords.lon, 'foot');
                 
-                if (leg1 && leg2a && leg2b && leg3) {
+                if (leg2a && leg2b) {
                     let driveMins1 = Math.ceil(parseFloat(leg2a.km) * 1.5);
                     let driveMins2 = Math.ceil(parseFloat(leg2b.km) * 1.5);
                     let rawTime = leg1.rawMins + driveMins1 + 4 + 6 + driveMins2 + 4 + leg3.rawMins + st1.padding + st2.padding;
@@ -179,11 +213,8 @@ async function runRoutePlanning() {
                     });
                 }
             } else {
-                const leg1 = await getRouteOSRM(originCoords.lat, originCoords.lon, st1.lat, st1.lon, 'foot');
                 const leg2 = await getRouteOSRM(st1.lat, st1.lon, st2.lat, st2.lon, 'driving');
-                const leg3 = await getRouteOSRM(st2.lat, st2.lon, destCoords.lat, destCoords.lon, 'foot');
-                
-                if (leg1 && leg2 && leg3) {
+                if (leg2) {
                     let mrtDriveMins = Math.ceil(parseFloat(leg2.km) * 1.5);
                     let rawTime = leg1.rawMins + mrtDriveMins + 4 + st1.padding + st2.padding + leg3.rawMins;
                     let bufferedTime = Math.ceil(rawTime * 1.1);
@@ -203,16 +234,14 @@ async function runRoutePlanning() {
     }
 
     if (activeFilters.has('lightrail')) {
-        let sortedStart = [...STATIONS_DATABASE.lightrail].sort((a,b) => getDistanceKM(originCoords.lat, originCoords.lon, a.lat, a.lon) - getDistanceKM(originCoords.lat, originCoords.lon, b.lat, b.lon));
-        let sortedEnd = [...STATIONS_DATABASE.lightrail].sort((a,b) => getDistanceKM(destCoords.lat, destCoords.lon, a.lat, a.lon) - getDistanceKM(destCoords.lat, destCoords.lon, b.lat, b.lon));
-        let st1 = sortedStart[0], st2 = sortedEnd[0];
+        let bestStart = await getTrueBestStation(originCoords, STATIONS_DATABASE.lightrail);
+        let bestEnd = await getTrueBestStation(destCoords, STATIONS_DATABASE.lightrail);
+        let st1 = bestStart.station, st2 = bestEnd.station;
+        let leg1 = bestStart.walkLeg, leg3 = bestEnd.walkLeg;
         
-        if (st1.name !== st2.name) {
-            const leg1 = await getRouteOSRM(originCoords.lat, originCoords.lon, st1.lat, st1.lon, 'foot');
+        if (st1.name !== st2.name && leg1 && leg3) {
             const leg2 = await getRouteOSRM(st1.lat, st1.lon, st2.lat, st2.lon, 'driving');
-            const leg3 = await getRouteOSRM(st2.lat, st2.lon, destCoords.lat, destCoords.lon, 'foot');
-            
-            if (leg1 && leg2 && leg3) {
+            if (leg2) {
                 let lrtDriveMins = Math.ceil(parseFloat(leg2.km) * 2.8); 
                 let rawTime = leg1.rawMins + lrtDriveMins + 7 + st1.padding + st2.padding + leg3.rawMins;
                 let bufferedTime = Math.ceil(rawTime * 1.1);
