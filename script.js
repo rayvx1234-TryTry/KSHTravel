@@ -1,14 +1,16 @@
 const OSRM_API = 'https://router.project-osrm.org/route/v1';
 const KAOHSIUNG_CENTER = [22.6228, 120.3014];
 
-// 🛰️ 深度擴充高精確軌道交通資料庫
+// 🛰️ 擴增高精確軌道交通資料庫 (加入三多商圈等紅線大站，以利測試跨線轉乘)
 const STATIONS_DATABASE = {
     mrt: [
         { name: '左營高鐵站', lat: 22.6874, lon: 120.3076, line: '紅線', padding: 5 },
         { name: '巨蛋站', lat: 22.6659, lon: 120.3023, line: '紅線', padding: 3 },
         { name: '凹子底站', lat: 22.6575, lon: 120.3027, line: '紅線', padding: 4 },
         { name: '高雄車站', lat: 22.6405, lon: 120.3022, line: '紅線', padding: 5 },
-        { name: '美麗島站', lat: 22.6314, lon: 120.3019, line: '紅橘樞紐', padding: 5 },
+        { name: '美麗島站', lat: 22.6314, lon: 120.3019, line: '轉乘樞紐', padding: 5 },
+        { name: '中央公園站', lat: 22.6247, lon: 120.3018, line: '紅線', padding: 3 },
+        { name: '三多商圈站', lat: 22.6139, lon: 120.3046, line: '紅線', padding: 3 },
         { name: '文化中心站', lat: 22.6271, lon: 120.3180, line: '橘線', padding: 3 },
         { name: '五塊厝站', lat: 22.6288, lon: 120.3298, line: '橘線', padding: 3 },
         { name: '衛武營站', lat: 22.6248, lon: 120.3404, line: '橘線', padding: 4 }
@@ -36,7 +38,6 @@ function initMap() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 }
 
-// 🔧 修復：夜間模式切換
 document.getElementById('themeToggle').addEventListener('click', () => {
     const html = document.documentElement;
     const isDark = html.getAttribute('data-theme') === 'dark';
@@ -44,7 +45,6 @@ document.getElementById('themeToggle').addEventListener('click', () => {
     document.getElementById('themeToggle').textContent = isDark ? '🌙' : '☀️';
 });
 
-// 0.5 秒快閃人偶提示
 document.querySelectorAll('.avatar-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('active'));
@@ -55,7 +55,7 @@ document.querySelectorAll('.avatar-btn').forEach(btn => {
     });
 });
 
-// ==================== 🔧 修復：真實地址搜尋聯想與定位 ====================
+// ==================== 真實地址搜尋聯想與定位 ====================
 document.getElementById('useLocationBtn').addEventListener('click', () => {
     if (!navigator.geolocation) return alert('瀏覽器不支援定位');
     const inputField = document.getElementById('originInput');
@@ -111,7 +111,6 @@ document.querySelectorAll('input[data-location-type]').forEach(input => {
     input.addEventListener('blur', () => setTimeout(() => document.getElementById(`${type}Dropdown`).classList.add('hidden'), 200));
 });
 
-// 起訖點對調按鈕
 document.getElementById('swapBtn').addEventListener('click', () => {
     const o = document.getElementById('originInput'), d = document.getElementById('destinationInput');
     [o.value, d.value] = [d.value, o.value];
@@ -141,37 +140,73 @@ async function runRoutePlanning() {
 
     const outputRoutes = [];
 
-    // 1. 捷運精確算時解
+    // 🌟 1. 捷運轉乘解與 10% 時間緩衝
     if (activeFilters.has('mrt')) {
         let sortedStart = [...STATIONS_DATABASE.mrt].sort((a,b) => getDistanceKM(originCoords.lat, originCoords.lon, a.lat, a.lon) - getDistanceKM(originCoords.lat, originCoords.lon, b.lat, b.lon));
         let sortedEnd = [...STATIONS_DATABASE.mrt].sort((a,b) => getDistanceKM(destCoords.lat, destCoords.lon, a.lat, a.lon) - getDistanceKM(destCoords.lat, destCoords.lon, b.lat, b.lon));
         let st1 = sortedStart[0], st2 = sortedEnd[0];
         
         if (st1.name !== st2.name) {
-            const leg1 = await getRouteOSRM(originCoords.lat, originCoords.lon, st1.lat, st1.lon, 'foot');
-            const leg2 = await getRouteOSRM(st1.lat, st1.lon, st2.lat, st2.lon, 'driving');
-            const leg3 = await getRouteOSRM(st2.lat, st2.lon, destCoords.lat, destCoords.lon, 'foot');
+            // 判斷是否需要跨線轉乘 (紅線與橘線互換)
+            let isTransfer = (st1.line === '紅線' && st2.line === '橘線') || (st1.line === '橘線' && st2.line === '紅線');
             
-            if (leg1 && leg2 && leg3) {
-                let mrtDriveMins = Math.ceil(parseFloat(leg2.km) * 1.5);
-                let waitTime = 4;
-                let stationBuffer = st1.padding + st2.padding;
-                let totalMrtTime = leg1.rawMins + mrtDriveMins + waitTime + stationBuffer;
+            if (isTransfer) {
+                // ⚠️ 轉車邏輯：需要經過美麗島站
+                let hub = STATIONS_DATABASE.mrt.find(s => s.name === '美麗島站');
+                const leg1 = await getRouteOSRM(originCoords.lat, originCoords.lon, st1.lat, st1.lon, 'foot');
+                const leg2a = await getRouteOSRM(st1.lat, st1.lon, hub.lat, hub.lon, 'driving'); // 第一段捷運
+                const leg2b = await getRouteOSRM(hub.lat, hub.lon, st2.lat, st2.lon, 'driving'); // 第二段捷運
+                const leg3 = await getRouteOSRM(st2.lat, st2.lon, destCoords.lat, destCoords.lon, 'foot');
+                
+                if (leg1 && leg2a && leg2b && leg3) {
+                    let driveMins1 = Math.ceil(parseFloat(leg2a.km) * 1.5);
+                    let driveMins2 = Math.ceil(parseFloat(leg2b.km) * 1.5);
+                    let transferWalkMins = 6; // 美麗島站內步行轉乘時間
+                    let rawTime = leg1.rawMins + driveMins1 + 4 + transferWalkMins + driveMins2 + 4 + leg3.rawMins + st1.padding + st2.padding;
+                    
+                    // 🌟 加入 10% 安全緩衝時間
+                    let bufferedTime = Math.ceil(rawTime * 1.1);
 
-                outputRoutes.push({
-                    type: 'mrt', badge: '🚇 高雄捷運精確線', title: `捷運 ${st1.name} ➔ ${st2.name}`,
-                    time: totalMrtTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '30 元',
-                    steps: [
-                        { icon: '🚶', title: `從起點步行至捷運 ${st1.name}`, mins: leg1.rawMins, color: '#38bdf8', path: leg1.path, nodeName: `${st1.name}入口`, detail: `請沿人行道步行前往。抵達車站後，因該站屬於深層地下化結構，從入口通過閘門並步行至地下月台層約需 ${st1.padding} 分鐘，請提早準備。` },
-                        { icon: '🚇', title: `搭乘高雄捷運 [${st1.line}]`, mins: mrtDriveMins + waitTime, color: '#E60012', path: leg2.path, nodeName: `${st2.name}月台`, detail: `<b>轉乘指引：</b><br>1. 進入月台後請確認往終點之行車方向。<br>2. 列車車程預計 ${mrtDriveMins} 分鐘，沿途請注意車廂廣播。<br>3. 抵達 ${st2.name} 後，請配合「往地面出口」手扶梯向上移動。` },
-                        { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#38bdf8', path: leg3.path, nodeName: `目的地`, detail: `自捷運閘門刷卡出站。建議從站前 YouBike 租賃站側出口離開，出站後順向步行即可抵達目的地。` }
-                    ]
-                });
+                    outputRoutes.push({
+                        type: 'mrt', badge: '🔄 捷運跨線轉乘', title: `${st1.name} ➔ 美麗島 ➔ ${st2.name}`,
+                        time: bufferedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2a.km) + parseFloat(leg2b.km) + parseFloat(leg3.km)).toFixed(2), price: '35 元',
+                        steps: [
+                            { icon: '🚶', title: `步行至 ${st1.name}`, mins: leg1.rawMins, color: '#38bdf8', path: leg1.path, nodeName: `${st1.name}`, detail: `步行前往進站，預留 ${st1.padding} 分鐘進站時間。` },
+                            { icon: '🚇', title: `搭乘 [${st1.line}] 至美麗島站`, mins: driveMins1 + 4, color: st1.line === '紅線' ? '#E60012' : '#F59E0B', path: leg2a.path, nodeName: `美麗島站`, detail: `車程約 ${driveMins1} 分鐘。到站後請下車準備轉乘。` },
+                            { icon: '🔄', title: `於 美麗島站 站內轉乘`, mins: transferWalkMins, color: '#8B5CF6', path: [], nodeName: null, detail: `美麗島為紅橘交會站。請依循頭頂橘色/紅色指標，搭乘手扶梯前往另一條路線的月台。` },
+                            { icon: '🚇', title: `轉乘 [${st2.line}] 至終點站`, mins: driveMins2 + 4, color: st2.line === '紅線' ? '#E60012' : '#F59E0B', path: leg2b.path, nodeName: `${st2.name}`, detail: `車程約 ${driveMins2} 分鐘，抵達 ${st2.name} 後下車。` },
+                            { icon: '🚶', title: `出站步行至目的地`, mins: leg3.rawMins, color: '#38bdf8', path: leg3.path, nodeName: `目的地`, detail: `自捷運閘門出站，依循地面指標抵達終點。` }
+                        ]
+                    });
+                }
+            } else {
+                // ✅ 直達邏輯
+                const leg1 = await getRouteOSRM(originCoords.lat, originCoords.lon, st1.lat, st1.lon, 'foot');
+                const leg2 = await getRouteOSRM(st1.lat, st1.lon, st2.lat, st2.lon, 'driving');
+                const leg3 = await getRouteOSRM(st2.lat, st2.lon, destCoords.lat, destCoords.lon, 'foot');
+                
+                if (leg1 && leg2 && leg3) {
+                    let mrtDriveMins = Math.ceil(parseFloat(leg2.km) * 1.5);
+                    let rawTime = leg1.rawMins + mrtDriveMins + 4 + st1.padding + st2.padding + leg3.rawMins;
+                    
+                    // 🌟 加入 10% 安全緩衝時間
+                    let bufferedTime = Math.ceil(rawTime * 1.1);
+
+                    outputRoutes.push({
+                        type: 'mrt', badge: '🚇 捷運直達線', title: `捷運 ${st1.name} ➔ ${st2.name}`,
+                        time: bufferedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '30 元',
+                        steps: [
+                            { icon: '🚶', title: `步行至 ${st1.name}`, mins: leg1.rawMins, color: '#38bdf8', path: leg1.path, nodeName: `${st1.name}`, detail: `沿人行道步行。進站與等車約需緩衝。` },
+                            { icon: '🚇', title: `搭乘高雄捷運 [${st1.line}]`, mins: mrtDriveMins + 4, color: st1.line === '紅線' ? '#E60012' : '#F59E0B', path: leg2.path, nodeName: `${st2.name}`, detail: `直達免轉車，車程預計 ${mrtDriveMins} 分鐘。` },
+                            { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#38bdf8', path: leg3.path, nodeName: `目的地`, detail: `自捷運閘門刷卡出站，步行即可抵達目的地。` }
+                        ]
+                    });
+                }
             }
         }
     }
 
-    // 2. 輕軌精確算時解
+    // 🌟 2. 輕軌解與 10% 時間緩衝
     if (activeFilters.has('lightrail')) {
         let sortedStart = [...STATIONS_DATABASE.lightrail].sort((a,b) => getDistanceKM(originCoords.lat, originCoords.lon, a.lat, a.lon) - getDistanceKM(originCoords.lat, originCoords.lon, b.lat, b.lon));
         let sortedEnd = [...STATIONS_DATABASE.lightrail].sort((a,b) => getDistanceKM(destCoords.lat, destCoords.lon, a.lat, a.lon) - getDistanceKM(destCoords.lat, destCoords.lon, b.lat, b.lon));
@@ -184,17 +219,18 @@ async function runRoutePlanning() {
             
             if (leg1 && leg2 && leg3) {
                 let lrtDriveMins = Math.ceil(parseFloat(leg2.km) * 2.8); 
-                let waitTime = 7; 
-                let stationBuffer = st1.padding + st2.padding;
-                let totalLrtTime = leg1.rawMins + lrtDriveMins + waitTime + stationBuffer;
+                let rawTime = leg1.rawMins + lrtDriveMins + 7 + st1.padding + st2.padding + leg3.rawMins;
+                
+                // 🌟 加入 10% 安全緩衝時間
+                let bufferedTime = Math.ceil(rawTime * 1.1);
 
                 outputRoutes.push({
-                    type: 'lightrail', badge: '🍏 環狀輕軌校正線', title: `輕軌 ${st1.name} ➔ ${st2.name}`,
-                    time: totalLrtTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '30 元',
+                    type: 'lightrail', badge: '🍏 環狀輕軌線', title: `輕軌 ${st1.name} ➔ ${st2.name}`,
+                    time: bufferedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '30 元',
                     steps: [
-                        { icon: '🚶', title: `步行至輕軌 ${st1.name}`, mins: leg1.rawMins, color: '#38bdf8', path: leg1.path, nodeName: `${st1.name}`, detail: `前往地面開放式輕軌站體。可以直接走到月台候車，進站時請記得在月台黃色刷卡機完成電子票證過卡。` },
-                        { icon: '🚃', title: '搭乘環狀輕軌低碳列車', mins: lrtDriveMins + waitTime, color: '#009E52', path: leg2.path, nodeName: `${st2.name}`, detail: `<b>轉乘與下車指引：</b><br>1. 列車到站時，<b>必須主動按壓車門上的綠色按鈕</b>，車門才會開啟。<br>2. 行駛過程中列車享有部分路口優先權，車程約 ${lrtDriveMins} 分鐘。<br>3. 抵達 ${st2.name} 下車時，同樣需手動按壓車門鈕，並於月台刷卡機再次過卡刷出。` },
-                        { icon: '🚶', title: '輕軌出站步行至終點', mins: leg3.rawMins, color: '#38bdf8', path: leg3.path, nodeName: `終點`, detail: `離開輕軌月台，沿著行人穿越道安全離開軌道區，步行最後一哩路前往指定目的地。` }
+                        { icon: '🚶', title: `步行至輕軌 ${st1.name}`, mins: leg1.rawMins, color: '#38bdf8', path: leg1.path, nodeName: `${st1.name}`, detail: `前往地面開放式輕軌站體。記得在月台黃色刷卡機過卡。` },
+                        { icon: '🚃', title: '搭乘環狀輕軌低碳列車', mins: lrtDriveMins + 7, color: '#009E52', path: leg2.path, nodeName: `${st2.name}`, detail: `到站必須主動按壓車門綠色按鈕，車程約 ${lrtDriveMins} 分鐘。` },
+                        { icon: '🚶', title: '輕軌出站步行至終點', mins: leg3.rawMins, color: '#38bdf8', path: leg3.path, nodeName: `終點`, detail: `沿著行人穿越道安全離開軌道區步行至目的地。` }
                     ]
                 });
             }
@@ -208,14 +244,14 @@ async function runRoutePlanning() {
 
 function renderRouteList(routes) {
     const container = document.getElementById('routesContainer');
-    if (routes.length === 0) { container.innerHTML = '<div class="error-box">查無路線，請試著變更地點或放寬交通工具過濾器。</div>'; return; }
+    if (routes.length === 0) { container.innerHTML = '<div class="error-box">查無路線，請試著變更地點。</div>'; return; }
     routes.forEach((rt, idx) => {
         const card = document.createElement('div'); card.className = 'route-card';
-        let clr = rt.type === 'mrt' ? '#E60012' : '#009E52';
+        let clr = rt.type === 'mrt' ? (rt.badge.includes('轉乘') ? '#8B5CF6' : '#E60012') : '#009E52';
         card.innerHTML = `
             <span class="badge" style="background:${clr}12; color:${clr}">${rt.badge}</span>
             <div class="card-title">${rt.title}</div>
-            <div class="card-meta">⏱️ 精確總時: <b>${rt.time} 分鐘</b> (含進出站) | 🛣️ ${rt.dist} km</div>
+            <div class="card-meta">⏱️ 精確總時: <b>${rt.time} 分鐘</b> (已含 10% 緩衝) | 🛣️ ${rt.dist} km</div>
         `;
         card.addEventListener('click', () => toggleToDetailView(rt, clr));
         container.appendChild(card);
@@ -234,7 +270,7 @@ function toggleToDetailView(route, themeColor) {
                 <div class="step-body">
                     <div class="clickable-step-header" onclick="toggleSubStepDetail(${index})">
                         <span class="step-title">${s.title} (${s.mins}分鐘)</span>
-                        <span class="click-hint">點擊看微觀轉乘指引 ▾</span>
+                        ${s.path && s.path.length > 0 ? `<span class="click-hint">微觀指引 ▾</span>` : `<span class="click-hint" style="color:#8B5CF6">站內指引 ▾</span>`}
                     </div>
                     <div id="subStep-${index}" class="sub-step-details hidden">${s.detail}</div>
                 </div>
@@ -245,7 +281,7 @@ function toggleToDetailView(route, themeColor) {
     content.innerHTML = `
         <div class="detail-main-title">${route.title}</div>
         <div class="meta-info-grid">
-            <div class="meta-item"><span class="meta-label">⏱️ 推算總時</span><span class="meta-value" style="color:${themeColor}">${route.time} 分鐘</span></div>
+            <div class="meta-item"><span class="meta-label">⏱️ 預估總時 (含緩衝)</span><span class="meta-value" style="color:${themeColor}">${route.time} 分鐘</span></div>
             <div class="meta-item"><span class="meta-label">💰 票價估算</span><span class="meta-value">${route.price}</span></div>
         </div>
         <div class="detail-timeline">${stepsHtml}</div>
@@ -263,24 +299,27 @@ function drawRouteOnMap(steps) {
     mapLayers.clearLayers(); let boundsPoints = [];
     
     steps.forEach((s) => {
-        L.polyline(s.path, { color: s.color, weight: 6, opacity: 0.85, dashArray: s.icon === '🚶' ? '4, 8' : 'none' }).addTo(mapLayers);
-        boundsPoints = boundsPoints.concat(s.path);
+        if(s.path && s.path.length > 0) {
+            L.polyline(s.path, { color: s.color, weight: 6, opacity: 0.85, dashArray: s.icon === '🚶' ? '4, 8' : 'none' }).addTo(mapLayers);
+            boundsPoints = boundsPoints.concat(s.path);
 
-        if (s.path && s.path.length > 0 && s.nodeName) {
-            const nodeCoord = s.path[0];
-            L.circleMarker(nodeCoord, { radius: 6, fillColor: s.color, color: '#ffffff', weight: 2, fillOpacity: 1 }).addTo(mapLayers);
-            L.marker(nodeCoord, { icon: L.divIcon({ className: 'hidden' }) }) 
-                .addTo(mapLayers)
-                .bindTooltip(`📍 ${s.nodeName}`, { permanent: true, direction: 'top', className: 'map-node-tooltip', offset: [0, -5] });
+            if (s.nodeName) {
+                const nodeCoord = s.path[0];
+                L.circleMarker(nodeCoord, { radius: 6, fillColor: s.color, color: '#ffffff', weight: 2, fillOpacity: 1 }).addTo(mapLayers);
+                L.marker(nodeCoord, { icon: L.divIcon({ className: 'hidden' }) }) 
+                    .addTo(mapLayers)
+                    .bindTooltip(`📍 ${s.nodeName}`, { permanent: true, direction: 'top', className: 'map-node-tooltip', offset: [0, -5] });
+            }
         }
     });
 
-    const customIcon = L.divIcon({ html: `<div class="dynamic-avatar-icon">${activeAvatar}</div>`, className: '', iconSize: [40, 40], iconAnchor: [20, 35] });
-    L.marker(boundsPoints[0], { icon: customIcon }).addTo(mapLayers);
-    map.fitBounds(L.latLngBounds(boundsPoints), { padding: [50, 50] });
+    if(boundsPoints.length > 0) {
+        const customIcon = L.divIcon({ html: `<div class="dynamic-avatar-icon">${activeAvatar}</div>`, className: '', iconSize: [40, 40], iconAnchor: [20, 35] });
+        L.marker(boundsPoints[0], { icon: customIcon }).addTo(mapLayers);
+        map.fitBounds(L.latLngBounds(boundsPoints), { padding: [50, 50] });
+    }
 }
 
-// 綁定過濾器與按鈕事件
 document.querySelectorAll('.filter-tag').forEach(t => t.addEventListener('click', () => {
     t.classList.toggle('active');
     if (t.classList.contains('active')) activeFilters.add(t.dataset.transit); else activeFilters.delete(t.dataset.transit);
