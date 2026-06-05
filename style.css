@@ -10,7 +10,6 @@
     --dropdown-hover: #f1f5f9;
     --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     
-    /* 捷運與輕軌完全獨立的色彩系統 */
     --color-mrt: #E60012;
     --color-lightrail: #009E52;
     --color-bus: #9333ea;
@@ -31,7 +30,6 @@
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-/* 🌌 霓虹高對比夜間模式濾鏡 */
 [data-theme="dark"] .leaflet-layer {
     filter: invert(90%) hue-rotate(195deg) contrast(125%) brightness(95%) saturate(150%) !important;
 }
@@ -40,7 +38,7 @@
 body, html { width: 100%; height: 100%; background: var(--bg-main); transition: background 0.3s; overflow: hidden; }
 .app-container { display: flex; height: 100vh; }
 
-/* === 側邊控制面板 === */
+/* 控制面板 */
 .control-panel { width: 420px; height: 100%; display: flex; flex-direction: column; background: var(--bg-panel); border-right: 1px solid var(--border); box-shadow: var(--shadow); z-index: 1000; }
 .panel-header { padding: 20px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
 .header-title h1 { font-size: 22px; color: var(--text-main); font-weight: 900; }
@@ -49,14 +47,17 @@ body, html { width: 100%; height: 100%; background: var(--bg-main); transition: 
 .theme-btn { background: var(--card-bg); border: 1px solid var(--border); font-size: 16px; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .theme-btn:hover { background: var(--dropdown-hover); transform: scale(1.05); }
 
-/* === 人偶造型區 === */
+/* 人偶選擇 */
 .avatar-section { padding: 4px 20px 12px; display: flex; align-items: center; gap: 10px; }
 .section-label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
 .avatar-picker { display: flex; gap: 8px; }
 .avatar-btn { font-size: 18px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid transparent; background: var(--card-bg); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
 .avatar-btn.active { border-color: var(--primary); background: var(--dropdown-hover); box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
 
-/* === 搜尋與輸入 === */
+/* ⏱️ 0.5秒快閃 Toast 樣式 */
+.avatar-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); color: #ffffff; padding: 10px 22px; border-radius: 30px; font-size: 14px; font-weight: 700; z-index: 99999; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: opacity 0.2s ease-in-out; }
+
+/* 輸入與搜尋 */
 .search-section { padding: 0 20px 16px; position: relative; border-bottom: 1px solid var(--border); }
 .input-group { position: relative; margin-bottom: 10px; }
 .input-wrapper { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px; }
@@ -72,7 +73,7 @@ body, html { width: 100%; height: 100%; background: var(--bg-main); transition: 
 .autocomplete-item:hover { background: var(--dropdown-hover); }
 .autocomplete-item-main { font-weight: 700; color: var(--text-main); font-size: 13px; }
 
-/* === 獨立快篩標籤 === */
+/* 快篩標籤 */
 .filter-wrapper { margin-top: 8px; margin-bottom: 12px; }
 .transit-filters { display: flex; gap: 6px; }
 .filter-tag { flex: 1; padding: 8px 2px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-sub); font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; transition: 0.2s; }
@@ -84,7 +85,7 @@ body, html { width: 100%; height: 100%; background: var(--bg-main); transition: 
 .primary-search-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
 .primary-search-btn:hover { background: var(--primary-hover); }
 
-/* === 視圖切換與卡片 === */
+/* 視圖與卡片 */
 .dynamic-view-box { flex: 1; position: relative; overflow: hidden; background: var(--bg-panel); }
 .view-block { width: 100%; height: 100%; overflow-y: auto; padding: 16px 20px; }
 .placeholder-text { text-align: center; color: var(--text-sub); font-size: 13px; margin-top: 40px; }
@@ -95,31 +96,30 @@ body, html { width: 100%; height: 100%; background: var(--bg-main); transition: 
 .card-title { font-size: 16px; font-weight: 900; color: var(--text-main); margin-bottom: 6px; }
 .card-meta { font-size: 13px; color: var(--text-sub); font-weight: 500; }
 
-/* === 深度詳情面板 UI === */
+/* 深度詳情面板 UI */
 .back-list-btn { background: var(--dropdown-hover); border: 1px solid var(--border); color: var(--text-main); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; margin-bottom: 14px; }
 .detail-content-wrapper { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
 .detail-main-header { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
 .detail-main-title { font-size: 18px; font-weight: 900; color: var(--text-main); margin-bottom: 6px; }
 
-/* 🚀 新增：核心智慧指標資訊網格 */
-.meta-info-grid { display: grid; grid-template-columns: 1px 1px; gap: 10px; margin-top: 12px; background: var(--dropdown-hover); padding: 12px; border-radius: 10px; }
+/* 智慧指標資訊網格 */
 .meta-info-grid { display: flex; flex-wrap: wrap; gap: 12px; background: var(--dropdown-hover); padding: 12px; border-radius: 10px; margin-top: 10px; }
 .meta-item { flex: 1; min-width: 120px; font-size: 12px; color: var(--text-main); }
 .meta-label { color: var(--text-sub); font-weight: bold; margin-bottom: 2px; display: block; }
 .meta-value { font-size: 14px; font-weight: 800; }
 
-/* 🚀 新增：一鍵帶入智慧深層連結按鈕 */
+/* 智慧外部深層連結按鈕 */
 .deeplink-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 14px; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
 .deeplink-btn:hover { background: #16a34a; transform: translateY(-1px); }
 
-/* 時間軸線 */
-.step-row { display: flex; gap: 14px; margin-bottom: 18px; position: relative; }
+/* 詳細轉乘時間軸樣式 */
+.step-row { display: flex; gap: 14px; margin-bottom: 20px; position: relative; }
 .step-row:last-child { margin-bottom: 0; }
-.step-row:not(:last-child)::after { content: ''; position: absolute; left: 15px; top: 32px; bottom: -12px; width: 2px; background: var(--border); z-index: 1; }
-.step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.step-row:not(:last-child)::after { content: ''; position: absolute; left: 16px; top: 32px; bottom: -14px; width: 2px; background: var(--border); z-index: 1; }
+.step-circle { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 15px; font-weight: bold; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 .step-body { flex: 1; padding-top: 4px; }
 .step-head { font-size: 14px; font-weight: 800; color: var(--text-main); }
-.step-desc { font-size: 12px; color: var(--text-sub); margin-top: 2px; line-height: 1.4; }
+.step-desc { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.5; background: var(--bg-main); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); }
 
 /* YouBike 推薦區塊 */
 .ubike-alert-box { margin-top: 8px; padding: 10px; background: rgba(6,182,212,0.06); border: 1px dashed var(--color-bike); border-radius: 8px; color: #0891b2; font-size: 12px; font-weight: 600; line-height: 1.4; }
