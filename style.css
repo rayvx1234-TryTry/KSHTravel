@@ -1,149 +1,165 @@
 :root {
-    --bg-main: #f0f4f9;
+    --bg-main: #f8fafc;
     --bg-panel: #ffffff;
-    --text-main: #1e293b;
+    --text-main: #0f172a;
     --text-sub: #64748b;
-    --border: #cbd5e1;
+    --border: #e2e8f0;
     --primary: #0284c7;
     --primary-hover: #0369a1;
     --card-bg: #ffffff;
     --dropdown-hover: #f1f5f9;
-    --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     
-    --color-mrt-red: #e11d48;
+    /* 路線專屬色彩 */
+    --color-mrt-red: #ef4444;
     --color-mrt-orange: #f97316;
-    --color-lightrail: #16a34a;
-    --color-bus: #9333ea;
-    --color-bike: #475569;
+    --color-lightrail: #22c55e;
+    --color-bus: #a855f7;
+    --color-bike: #06b6d4;
+    --color-uber: #1e293b;
 }
 
 [data-theme="dark"] {
-    --bg-main: #0f172a;
+    --bg-main: #090d16;
     --bg-panel: #111827;
     --text-main: #f8fafc;
     --text-sub: #94a3b8;
-    --border: #334155;
+    --border: #1f2937;
     --primary: #38bdf8;
     --primary-hover: #7dd3fc;
-    --card-bg: #1e293b;
-    --dropdown-hover: #334155;
+    --card-bg: #1f2937;
+    --dropdown-hover: #374151;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-/* 🚀 關鍵：讓 OpenStreetMap 在夜間模式保留細節但變為暗色系 */
+/* 🌌 關鍵升級：賽博龐克炫彩霓虹夜間地圖濾鏡，保留綠地與發光幹道細節 */
 [data-theme="dark"] .leaflet-layer {
-    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    filter: invert(90%) hue-rotate(195deg) contrast(125%) brightness(95%) saturate(150%) !important;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; }
 body, html { width: 100%; height: 100%; background: var(--bg-main); transition: background 0.3s; overflow: hidden; }
 .app-container { display: flex; height: 100vh; }
 
-/* === 面板基礎 === */
+/* === 側邊控制面板 === */
 .control-panel {
-    width: 400px; height: 100%; display: flex; flex-direction: column;
+    width: 420px; height: 100%; display: flex; flex-direction: column;
     background: var(--bg-panel); border-right: 1px solid var(--border);
-    box-shadow: var(--shadow); z-index: 1000; transition: 0.3s;
+    box-shadow: var(--shadow); z-index: 1000;
 }
-
-.panel-header { padding: 24px 20px 12px; display: flex; justify-content: space-between; align-items: center; }
-.header-title h1 { font-size: 24px; color: var(--text-main); font-weight: 900; }
-.header-title p { font-size: 13px; color: var(--text-sub); }
+.panel-header { padding: 20px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
+.header-title h1 { font-size: 22px; color: var(--text-main); font-weight: 900; letter-spacing: -0.5px; }
+.header-title p { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
 
 .theme-btn {
-    background: var(--card-bg); border: 1px solid var(--border); font-size: 18px;
-    width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: 0.2s;
+    background: var(--card-bg); border: 1px solid var(--border); font-size: 16px;
+    width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
 }
-.theme-btn:hover { background: var(--dropdown-hover); }
+.theme-btn:hover { background: var(--dropdown-hover); transform: scale(1.05); }
 
-/* === 人偶與搜尋區 === */
-.avatar-section { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
-.section-label { font-size: 12px; font-weight: 700; color: var(--text-sub); }
-.avatar-picker { display: flex; gap: 6px; }
+/* === 人偶造型區 === */
+.avatar-section { padding: 4px 20px 12px; display: flex; align-items: center; gap: 10px; }
+.section-label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+.avatar-picker { display: flex; gap: 8px; }
 .avatar-btn {
     font-size: 18px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid transparent;
-    background: var(--card-bg); cursor: pointer; transition: 0.2s;
+    background: var(--card-bg); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;
 }
-.avatar-btn.active { border-color: var(--primary); background: var(--dropdown-hover); }
+.avatar-btn:hover { transform: scale(1.15); }
+.avatar-btn.active { border-color: var(--primary); background: var(--dropdown-hover); box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
 
-.search-section { padding: 0 20px 16px; position: relative; border-bottom: 1px solid var(--border); z-index: 50; }
+/* === 搜尋區塊 === */
+.search-section { padding: 0 20px 16px; position: relative; border-bottom: 1px solid var(--border); }
 .input-group { position: relative; margin-bottom: 10px; }
 .input-wrapper {
     display: flex; align-items: center; background: var(--card-bg);
-    border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px;
+    border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px; transition: 0.2s;
 }
-.input-wrapper:focus-within { border-color: var(--primary); }
+.input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
 .input-wrapper input { flex: 1; border: none; outline: none; background: transparent; color: var(--text-main); padding: 8px; font-size: 14px; }
 .input-icon { font-size: 16px; }
-.action-icon-btn { background: none; border: none; cursor: pointer; font-size: 16px; }
+.action-icon-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; transition: 0.2s; }
+.action-icon-btn:hover { transform: scale(1.2); }
 
 .swap-btn {
     position: absolute; right: 36px; top: 38px; width: 28px; height: 28px;
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%;
-    cursor: pointer; z-index: 10; color: var(--text-main); transition: 0.3s;
+    cursor: pointer; z-index: 10; color: var(--text-main); font-weight: bold; transition: 0.3s;
 }
 .swap-btn:hover { transform: rotate(180deg); background: var(--primary); color: white; }
 
 .autocomplete-dropdown {
     position: absolute; top: calc(100% + 4px); left: 0; width: 100%;
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15); max-height: 210px; overflow-y: auto; z-index: 9999 !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; z-index: 9999 !important;
 }
-.autocomplete-item { padding: 12px 14px; cursor: pointer; border-bottom: 1px solid var(--border); }
+.autocomplete-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
 .autocomplete-item:hover { background: var(--dropdown-hover); }
-.autocomplete-item-main { font-weight: 700; color: var(--text-main); font-size: 14px; }
+.autocomplete-item-main { font-weight: 700; color: var(--text-main); font-size: 13px; }
 .autocomplete-item-sub { color: var(--text-sub); font-size: 11px; margin-top: 2px; }
 
-/* === 標籤與按鈕 === */
+/* === 交通篩選標籤 === */
 .filter-wrapper { margin-top: 8px; margin-bottom: 12px; }
 .transit-filters { display: flex; gap: 6px; }
-.filter-tag { flex: 1; padding: 8px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-sub); font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-.filter-tag.active[data-transit="mrt"] { border-color: var(--color-mrt-red); color: var(--color-mrt-red); }
-.filter-tag.active[data-transit="lightrail"] { border-color: var(--color-lightrail); color: var(--color-lightrail); }
-.filter-tag.active[data-transit="bus"] { border-color: var(--color-bus); color: var(--color-bus); }
-.filter-tag.active[data-transit="bike"] { border-color: var(--color-bike); color: var(--color-bike); }
+.filter-tag {
+    flex: 1; padding: 8px 4px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-sub); font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; transition: 0.2s;
+}
+.filter-tag.active[data-transit="mrt"] { border-color: var(--color-mrt-red); color: var(--color-mrt-red); background: rgba(239,68,68,0.06); }
+.filter-tag.active[data-transit="lightrail"] { border-color: var(--color-lightrail); color: var(--color-lightrail); background: rgba(34,197,94,0.06); }
+.filter-tag.active[data-transit="bus"] { border-color: var(--color-bus); color: var(--color-bus); background: rgba(168,85,247,0.06); }
+.filter-tag.active[data-transit="bike"] { border-color: var(--color-bike); color: var(--color-bike); background: rgba(6,182,212,0.06); }
 
-.primary-search-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.primary-search-btn {
+    width: 100%; padding: 14px; background: var(--primary); color: white; border: none;
+    border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s;
+}
 .primary-search-btn:hover { background: var(--primary-hover); }
 
-/* === 視圖切換區 === */
-.view-container { flex: 1; position: relative; overflow: hidden; }
-.results-area, .detail-area { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; padding: 16px 20px; transition: transform 0.3s ease; background: var(--bg-panel); }
-.detail-area { transform: translateX(100%); z-index: 10; }
-.detail-area.active { transform: translateX(0); }
-.results-area.hidden-left { transform: translateX(-100%); }
+/* === 核心動態視圖方塊 === */
+.dynamic-view-box { flex: 1; position: relative; overflow: hidden; background: var(--bg-panel); }
+.view-block { width: 100%; height: 100%; overflow-y: auto; padding: 16px 20px; display: block; }
 
-.error-box { padding: 12px; background: rgba(225,29,72,0.1); color: var(--color-mrt-red); border-radius: 8px; font-size: 13px; text-align: center; margin-bottom: 12px; }
-.loading-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; color: var(--text-sub); font-size: 13px; }
-.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* === 路線清單卡片 (簡化版) === */
+/* === 路線清單卡片 === */
+.placeholder-text { text-align: center; color: var(--text-sub); font-size: 13px; margin-top: 40px; }
 .route-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; padding: 16px; cursor: pointer; transition: 0.2s; }
-.route-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--primary); }
+.route-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--primary); }
 .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
 .card-title { font-size: 16px; font-weight: 900; color: var(--text-main); margin-bottom: 6px; }
 .card-meta { font-size: 13px; color: var(--text-sub); font-weight: 500; }
 
-/* === 詳細資訊面板 === */
-.back-btn { background: none; border: none; color: var(--primary); font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
-.detail-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
-.detail-header { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-.detail-title { font-size: 20px; font-weight: 900; color: var(--text-main); margin-bottom: 8px; }
+/* === 詳情資訊面板 === */
+.back-list-btn { background: var(--dropdown-hover); border: 1px solid var(--border); color: var(--text-main); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; margin-bottom: 16px; transition: 0.15s; }
+.back-list-btn:hover { background: var(--border); }
+.detail-content-wrapper { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
+.detail-main-header { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.detail-main-title { font-size: 19px; font-weight: 900; color: var(--text-main); margin-bottom: 8px; }
 
-.step-item { display: flex; gap: 16px; margin-bottom: 20px; position: relative; }
-.step-item:last-child { margin-bottom: 0; }
-/* 連接線 */
-.step-item:not(:last-child)::after { content: ''; position: absolute; left: 15px; top: 32px; bottom: -12px; width: 2px; background: var(--border); z-index: 1; }
-.step-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold; z-index: 2; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-.step-info { flex: 1; padding-top: 4px; }
-.step-text { font-size: 15px; font-weight: 700; color: var(--text-main); }
-.step-subtext { font-size: 13px; color: var(--text-sub); margin-top: 4px; line-height: 1.4; }
+/* 步驟時間軸 */
+.step-row { display: flex; gap: 16px; margin-bottom: 20px; position: relative; }
+.step-row:last-child { margin-bottom: 0; }
+.step-row:not(:last-child)::after { content: ''; position: absolute; left: 15px; top: 32px; bottom: -12px; width: 2px; background: var(--border); z-index: 1; }
+.step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+.step-body { flex: 1; padding-top: 3px; }
+.step-head { font-size: 14px; font-weight: 800; color: var(--text-main); }
+.step-desc { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.4; }
+
+/* 🧠 核心增強：步行過久時跳出的智慧 YouBike 推薦區塊樣式 */
+.ubike-alert-box {
+    margin-top: 8px; padding: 10px 12px; background: rgba(6,182,212,0.08);
+    border: 1px dashed var(--color-bike); border-radius: 8px; color: #0891b2; font-size: 12px; font-weight: 600;
+}
+
+/* === 加載與錯誤 === */
+.error-box { padding: 12px; background: rgba(239,68,68,0.1); color: var(--color-mrt-red); border-radius: 8px; font-size: 13px; text-align: center; }
+.loading-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 0; color: var(--text-sub); font-size: 13px; }
+.spinner { width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* === 地圖 === */
 .map-area { flex: 1; height: 100%; }
-#map { width: 100%; height: 100%; background: transparent; }
-.dynamic-avatar-icon { font-size: 32px; text-shadow: 0 2px 5px rgba(0,0,0,0.4); text-align: center; animation: bounce 2s infinite; }
+#map { width: 100%; height: 100%; background: #eaeaea; }
+.dynamic-avatar-icon { font-size: 32px; text-shadow: 0 2px 6px rgba(0,0,0,0.35); text-align: center; animation: bounce 2s infinite; }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 ::-webkit-scrollbar { width: 6px; }
