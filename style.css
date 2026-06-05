@@ -1,139 +1,84 @@
+/* 精簡附帶核心新增樣式，其餘保留原設定 */
 :root {
-    --bg-main: #f8fafc;
-    --bg-panel: #ffffff;
-    --text-main: #0f172a;
-    --text-sub: #64748b;
-    --border: #e2e8f0;
-    --primary: #005CAF;
-    --primary-hover: #004b93;
-    --card-bg: #ffffff;
-    --dropdown-hover: #f1f5f9;
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    
-    --color-mrt: #E60012;
-    --color-lightrail: #009E52;
-    --color-bus: #9333ea;
-    --color-bike: #06b6d4;
-    --color-uber: #1e293b;
+    --bg-main: #f8fafc; --bg-panel: #ffffff; --text-main: #0f172a; --text-sub: #64748b;
+    --border: #e2e8f0; --primary: #005CAF; --card-bg: #ffffff; --dropdown-hover: #f1f5f9;
 }
-
 [data-theme="dark"] {
-    --bg-main: #090d16;
-    --bg-panel: #111827;
-    --text-main: #f8fafc;
-    --text-sub: #94a3b8;
-    --border: #1f2937;
-    --primary: #38bdf8;
-    --primary-hover: #7dd3fc;
-    --card-bg: #1f2937;
-    --dropdown-hover: #374151;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --bg-main: #090d16; --bg-panel: #111827; --text-main: #f8fafc; --text-sub: #94a3b8;
+    --border: #1f2937; --primary: #38bdf8; --card-bg: #1f2937; --dropdown-hover: #374151;
 }
-
-[data-theme="dark"] .leaflet-layer {
-    filter: invert(90%) hue-rotate(195deg) contrast(125%) brightness(95%) saturate(150%) !important;
-}
-
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; }
-body, html { width: 100%; height: 100%; background: var(--bg-main); transition: background 0.3s; overflow: hidden; }
+body, html { width: 100%; height: 100%; background: var(--bg-main); overflow: hidden; }
 .app-container { display: flex; height: 100vh; }
-
-/* 控制面板 */
-.control-panel { width: 420px; height: 100%; display: flex; flex-direction: column; background: var(--bg-panel); border-right: 1px solid var(--border); box-shadow: var(--shadow); z-index: 1000; }
+.control-panel { width: 420px; height: 100%; display: flex; flex-direction: column; background: var(--bg-panel); border-right: 1px solid var(--border); z-index: 1000; }
 .panel-header { padding: 20px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
 .header-title h1 { font-size: 22px; color: var(--text-main); font-weight: 900; }
-.header-title p { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.header-title p { font-size: 12px; color: var(--text-sub); }
+.theme-btn { background: var(--card-bg); border: 1px solid var(--border); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; }
 
-.theme-btn { background: var(--card-bg); border: 1px solid var(--border); font-size: 16px; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-.theme-btn:hover { background: var(--dropdown-hover); transform: scale(1.05); }
-
-/* 人偶選擇 */
+/* 角色 */
 .avatar-section { padding: 4px 20px 12px; display: flex; align-items: center; gap: 10px; }
 .section-label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
 .avatar-picker { display: flex; gap: 8px; }
-.avatar-btn { font-size: 18px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid transparent; background: var(--card-bg); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-.avatar-btn.active { border-color: var(--primary); background: var(--dropdown-hover); box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+.avatar-btn { font-size: 18px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid transparent; background: var(--card-bg); cursor: pointer; }
+.avatar-btn.active { border-color: var(--primary); background: var(--dropdown-hover); }
+.avatar-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); color: white; padding: 10px 22px; border-radius: 30px; font-size: 14px; font-weight: 700; z-index: 99999; transition: opacity 0.2s; }
 
-/* ⏱️ 0.5秒快閃 Toast 樣式 */
-.avatar-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); color: #ffffff; padding: 10px 22px; border-radius: 30px; font-size: 14px; font-weight: 700; z-index: 99999; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: opacity 0.2s ease-in-out; }
-
-/* 輸入與搜尋 */
+/* 搜尋 */
 .search-section { padding: 0 20px 16px; position: relative; border-bottom: 1px solid var(--border); }
-.input-group { position: relative; margin-bottom: 10px; }
 .input-wrapper { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px; }
 .input-wrapper input { flex: 1; border: none; outline: none; background: transparent; color: var(--text-main); padding: 8px; font-size: 14px; }
-.input-icon { font-size: 16px; }
-.action-icon-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; }
+.action-icon-btn { background: none; border: none; cursor: pointer; }
+.swap-btn { position: absolute; right: 36px; top: 38px; width: 28px; height: 28px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%; cursor: pointer; z-index: 10; }
+.autocomplete-dropdown { position: absolute; width: 90%; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; max-height: 200px; overflow-y: auto; z-index: 9999; }
+.autocomplete-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: bold; color: var(--text-main); }
 
-.swap-btn { position: absolute; right: 36px; top: 38px; width: 28px; height: 28px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%; cursor: pointer; z-index: 10; color: var(--text-main); font-weight: bold; transition: 0.3s; }
-.swap-btn:hover { transform: rotate(180deg); background: var(--primary); color: white; }
-
-.autocomplete-dropdown { position: absolute; top: calc(100% + 4px); left: 0; width: 100%; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; z-index: 9999 !important; }
-.autocomplete-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
-.autocomplete-item:hover { background: var(--dropdown-hover); }
-.autocomplete-item-main { font-weight: 700; color: var(--text-main); font-size: 13px; }
-
-/* 快篩標籤 */
+/* 標籤 */
 .filter-wrapper { margin-top: 8px; margin-bottom: 12px; }
 .transit-filters { display: flex; gap: 6px; }
-.filter-tag { flex: 1; padding: 8px 2px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-sub); font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; transition: 0.2s; }
-.filter-tag.active[data-transit="mrt"] { border-color: var(--color-mrt); color: var(--color-mrt); background: rgba(230,0,18,0.06); }
-.filter-tag.active[data-transit="lightrail"] { border-color: var(--color-lightrail); color: var(--color-lightrail); background: rgba(0,158,82,0.06); }
-.filter-tag.active[data-transit="bus"] { border-color: var(--color-bus); color: var(--color-bus); background: rgba(147,51,234,0.06); }
-.filter-tag.active[data-transit="bike"] { border-color: var(--color-bike); color: var(--color-bike); background: rgba(6,182,212,0.06); }
+.filter-tag { flex: 1; padding: 8px 2px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-sub); font-size: 11px; font-weight: 700; cursor: pointer; }
+.filter-tag.active { border-color: var(--primary); color: var(--primary); }
+.primary-search-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
 
-.primary-search-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-.primary-search-btn:hover { background: var(--primary-hover); }
-
-/* 視圖與卡片 */
-.dynamic-view-box { flex: 1; position: relative; overflow: hidden; background: var(--bg-panel); }
+/* 列表與深度詳情 */
+.dynamic-view-box { flex: 1; overflow: hidden; position: relative; }
 .view-block { width: 100%; height: 100%; overflow-y: auto; padding: 16px 20px; }
-.placeholder-text { text-align: center; color: var(--text-sub); font-size: 13px; margin-top: 40px; }
-
-.route-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; padding: 16px; cursor: pointer; transition: 0.2s; }
-.route-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--primary); }
+.route-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; padding: 16px; cursor: pointer; }
 .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
-.card-title { font-size: 16px; font-weight: 900; color: var(--text-main); margin-bottom: 6px; }
-.card-meta { font-size: 13px; color: var(--text-sub); font-weight: 500; }
+.card-title { font-size: 15px; font-weight: 900; color: var(--text-main); }
+.card-meta { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
 
-/* 深度詳情面板 UI */
 .back-list-btn { background: var(--dropdown-hover); border: 1px solid var(--border); color: var(--text-main); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; margin-bottom: 14px; }
-.detail-content-wrapper { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
-.detail-main-header { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-.detail-main-title { font-size: 18px; font-weight: 900; color: var(--text-main); margin-bottom: 6px; }
-
-/* 智慧指標資訊網格 */
-.meta-info-grid { display: flex; flex-wrap: wrap; gap: 12px; background: var(--dropdown-hover); padding: 12px; border-radius: 10px; margin-top: 10px; }
-.meta-item { flex: 1; min-width: 120px; font-size: 12px; color: var(--text-main); }
-.meta-label { color: var(--text-sub); font-weight: bold; margin-bottom: 2px; display: block; }
+.detail-content-wrapper { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+.detail-main-title { font-size: 18px; font-weight: 900; color: var(--text-main); margin-bottom: 10px; }
+.meta-info-grid { background: var(--dropdown-hover); padding: 12px; border-radius: 10px; display: flex; gap: 12px; margin-bottom: 16px; }
+.meta-item { flex: 1; font-size: 12px; color: var(--text-main); }
+.meta-label { color: var(--text-sub); font-weight: bold; display: block; }
 .meta-value { font-size: 14px; font-weight: 800; }
 
-/* 智慧外部深層連結按鈕 */
-.deeplink-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 14px; padding: 12px; background: #22c55e; color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
-.deeplink-btn:hover { background: #16a34a; transform: translateY(-1px); }
+/* 🌟 二級可點擊式時間軸抽屜樣式 */
+.step-row { display: flex; gap: 14px; margin-bottom: 16px; position: relative; }
+.step-row:not(:last-child)::after { content: ''; position: absolute; left: 16px; top: 32px; bottom: -14px; width: 2px; background: var(--border); }
+.step-circle { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; z-index: 2; }
+.step-body { flex: 1; }
 
-/* 詳細轉乘時間軸樣式 */
-.step-row { display: flex; gap: 14px; margin-bottom: 20px; position: relative; }
-.step-row:last-child { margin-bottom: 0; }
-.step-row:not(:last-child)::after { content: ''; position: absolute; left: 16px; top: 32px; bottom: -14px; width: 2px; background: var(--border); z-index: 1; }
-.step-circle { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 15px; font-weight: bold; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.step-body { flex: 1; padding-top: 4px; }
-.step-head { font-size: 14px; font-weight: 800; color: var(--text-main); }
-.step-desc { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.5; background: var(--bg-main); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); }
+.clickable-step-header { background: var(--bg-main); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+.clickable-step-header:hover { background: var(--dropdown-hover); border-color: var(--primary); }
+.step-title { font-size: 13px; font-weight: 800; color: var(--text-main); }
+.click-hint { font-size: 11px; color: var(--primary); font-weight: bold; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 4px; }
 
-/* YouBike 推薦區塊 */
-.ubike-alert-box { margin-top: 8px; padding: 10px; background: rgba(6,182,212,0.06); border: 1px dashed var(--color-bike); border-radius: 8px; color: #0891b2; font-size: 12px; font-weight: 600; line-height: 1.4; }
+/* 🌟 微觀隱藏深層轉乘面板 */
+.sub-step-details { margin-top: 8px; background: var(--card-bg); border: 2px dashed var(--border); border-radius: 10px; padding: 12px; font-size: 12px; color: var(--text-main); line-height: 1.6; }
+.sub-step-details ul { margin-left: 16px; margin-top: 6px; }
+.sub-step-details li { margin-bottom: 4px; }
 
-.error-box { padding: 12px; background: rgba(239,68,68,0.1); color: var(--color-mrt); border-radius: 8px; font-size: 13px; text-align: center; }
-.loading-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 0; color: var(--text-sub); font-size: 13px; }
-.spinner { width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
+/* 地圖與永駐標籤 */
 .map-area { flex: 1; height: 100%; }
-#map { width: 100%; height: 100%; background: #eaeaea; }
-.dynamic-avatar-icon { font-size: 32px; text-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center; animation: bounce 2s infinite; }
-@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+#map { width: 100%; height: 100%; }
+.dynamic-avatar-icon { font-size: 32px; text-align: center; }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+/* 🌟 永駐地圖節點文字標籤樣式 */
+.map-node-tooltip { background: #0f172a !important; color: #ffffff !important; border: none !important; border-radius: 6px !important; padding: 4px 8px !important; font-size: 11px !important; font-weight: bold !important; box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important; }
+.map-node-tooltip::before { border-top-color: #0f172a !important; }
+
 .hidden { display: none !important; }

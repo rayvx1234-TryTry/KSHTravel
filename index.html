@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高雄大眾運輸全能導航 V8</title>
-    
+    <title>高雄大眾運輸全能導航 V9</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="stylesheet" href="style.css">
@@ -14,10 +13,10 @@
         <aside class="control-panel">
             <div class="panel-header">
                 <div class="header-title">
-                    <h1>🚇 K-Transit</h1>
+                    <h1>🚇 K-Transit PRO</h1>
                     <p>高雄自動化智慧轉乘系統</p>
                 </div>
-                <button id="themeToggle" class="theme-btn" title="切換夜間模式">🌙</button>
+                <button id="themeToggle" class="theme-btn">🌙</button>
             </div>
 
             <div class="avatar-section">
@@ -26,7 +25,6 @@
                     <button class="avatar-btn active" data-avatar="🧍‍♂️">🧍‍♂️</button>
                     <button class="avatar-btn" data-avatar="🧍‍♀️">🧍‍♀️</button>
                     <button class="avatar-btn" data-avatar="🚴">🚴</button>
-                    <button class="avatar-btn" data-avatar="🥷">🥷</button>
                     <button class="avatar-btn" data-avatar="🐱">🐱</button>
                 </div>
             </div>
@@ -36,12 +34,12 @@
                     <div class="input-wrapper">
                         <span class="input-icon">📍</span>
                         <input type="text" id="originInput" placeholder="輸入起點 或 使用目前位置" autocomplete="off" data-location-type="origin">
-                        <button id="useLocationBtn" class="action-icon-btn" title="定位我的位置">🎯</button>
+                        <button id="useLocationBtn" class="action-icon-btn">🎯</button>
                     </div>
                     <div id="originDropdown" class="autocomplete-dropdown hidden"></div>
                 </div>
 
-                <button id="swapBtn" class="swap-btn" title="對調起終點">⇅</button>
+                <button id="swapBtn" class="swap-btn">⇅</button>
 
                 <div class="input-group">
                     <div class="input-wrapper">
@@ -53,8 +51,8 @@
 
                 <div class="filter-wrapper">
                     <div class="transit-filters">
-                        <button class="filter-tag active" data-transit="mrt">捷運 (MRT)</button>
-                        <button class="filter-tag active" data-transit="lightrail">輕軌 (LRT)</button>
+                        <button class="filter-tag active" data-transit="mrt">捷運</button>
+                        <button class="filter-tag active" data-transit="lightrail">輕軌</button>
                         <button class="filter-tag active" data-transit="bus">公車</button>
                         <button class="filter-tag active" data-transit="bike">YouBike</button>
                     </div>
@@ -65,7 +63,6 @@
 
             <div class="dynamic-view-box">
                 <div id="listView" class="view-block">
-                    <div id="errorMessage" class="error-box hidden"></div>
                     <div id="loadingIndicator" class="loading-box hidden">
                         <div class="spinner"></div>
                         <p>正在獨立分析高雄最佳路網解...</p>
