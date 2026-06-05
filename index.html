@@ -1,119 +1,64 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高雄大眾運輸全能導航</title>
+    <title>高雄智慧導航 V3</title>
     
-    <!-- Leaflet CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
-        <!-- Left Control Panel -->
-        <aside class="control-panel" id="controlPanel">
-            <!-- Header -->
+        <aside class="control-panel">
             <div class="panel-header">
-                <h1 class="app-title">🚇 高雄運輸導航</h1>
-                <p class="app-subtitle">智慧轉乘規劃系統</p>
-            </div>
-
-            <!-- Origin & Destination -->
-            <div class="location-section">
-                <div class="location-input-group">
-                    <!-- Origin Input with Autocomplete -->
-                    <div class="location-input-wrapper autocomplete-wrapper">
-                        <label for="originInput" class="location-label">📍 起點</label>
-                        <div class="input-container">
-                            <input 
-                                type="text" 
-                                id="originInput" 
-                                class="location-input" 
-                                placeholder="輸入起點或點擊「使用目前位置」"
-                                autocomplete="off"
-                                data-location-type="origin"
-                            >
-                            <button id="useCurrentLocationBtn" class="use-location-btn" title="使用目前位置">📍</button>
-                        </div>
-                        <div id="originDropdown" class="autocomplete-dropdown hidden"></div>
-                    </div>
-
-                    <button id="swapLocationsBtn" class="swap-locations-btn" title="對調起終點">⇅</button>
-
-                    <!-- Destination Input with Autocomplete -->
-                    <div class="location-input-wrapper autocomplete-wrapper">
-                        <label for="destinationInput" class="location-label">📍 終點</label>
-                        <div class="input-container">
-                            <input 
-                                type="text" 
-                                id="destinationInput" 
-                                class="location-input" 
-                                placeholder="輸入終點"
-                                autocomplete="off"
-                                data-location-type="destination"
-                            >
-                        </div>
-                        <div id="destinationDropdown" class="autocomplete-dropdown hidden"></div>
-                    </div>
+                <div class="header-title">
+                    <h1>🚇 K-Transit</h1>
+                    <p>高雄全能轉乘系統</p>
                 </div>
+                <button id="themeToggle" class="icon-btn" title="切換夜間模式">🌙</button>
             </div>
 
-            <!-- Filter Section -->
-            <div class="filter-section">
-                <label class="filter-label">篩選交通工具</label>
-                <div class="transit-filter">
-                    <button class="transit-filter-btn active" data-transit="mrt" title="捷運">🚇 捷運</button>
-                    <button class="transit-filter-btn active" data-transit="lightrail" title="輕軌">🚃 輕軌</button>
-                    <button class="transit-filter-btn active" data-transit="bus" title="公車">🚌 公車</button>
-                    <button class="transit-filter-btn active" data-transit="bike" title="YouBike">🚲 YouBike</button>
+            <div class="search-section">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <span class="icon">📍</span>
+                        <input type="text" id="originInput" placeholder="輸入起點 或 使用目前位置" autocomplete="off" data-type="origin">
+                        <button id="useLocationBtn" class="icon-btn small" title="我的位置">🎯</button>
+                    </div>
+                    <div id="originDropdown" class="autocomplete-dropdown hidden"></div>
                 </div>
+
+                <button id="swapBtn" class="swap-btn">⇅</button>
+
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <span class="icon">🏁</span>
+                        <input type="text" id="destinationInput" placeholder="輸入目的地" autocomplete="off" data-type="dest">
+                    </div>
+                    <div id="destinationDropdown" class="autocomplete-dropdown hidden"></div>
+                </div>
+
+                <button id="searchBtn" class="primary-btn">規劃最佳路線</button>
             </div>
 
-            <!-- Search Button -->
-            <button id="searchBtn" class="search-button">搜尋最佳大眾運輸</button>
-
-            <!-- Results Area -->
             <div class="results-area">
-                <!-- Loading Indicator -->
-                <div id="loadingIndicator" class="loading-indicator hidden">
-                    <div class="spinner"></div>
-                    <span>正在規劃最佳路線...</span>
+                <div id="statusMessage" class="status-message hidden"></div>
+                <div id="loading" class="loading-wrapper hidden">
+                    <div class="spinner"></div><p>AI 路由計算中...</p>
                 </div>
-
-                <!-- Error Message -->
-                <div id="errorMessage" class="error-message hidden"></div>
-
-                <!-- Routes Container (Accordion) -->
-                <div class="routes-container" id="routesContainer">
-                    <!-- Route accordion cards will be inserted here -->
-                </div>
+                <div id="routesContainer" class="routes-container">
+                    </div>
             </div>
         </aside>
 
-        <!-- Right Map Area -->
-        <main class="map-area" id="mapArea">
-            <div id="map" class="map-container"></div>
-            
-            <!-- Bottom Sheet for Mobile -->
-            <div class="bottom-sheet hidden" id="bottomSheet">
-                <div class="bottom-sheet-header">
-                    <div class="bottom-sheet-handle"></div>
-                    <h2>路線規劃結果</h2>
-                </div>
-                <div class="bottom-sheet-content" id="bottomSheetContent">
-                    <!-- Route cards will be duplicated here on mobile -->
-                </div>
-            </div>
+        <main class="map-area">
+            <div id="map"></div>
         </main>
     </div>
 
-    <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    
-    <!-- Custom Script -->
     <script src="script.js"></script>
 </body>
 </html>
