@@ -139,11 +139,17 @@ function getDistanceKM(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function getRouteOSRM(lat1, lon1, lat2, lon2, profile = 'foot') {
+async function getRouteOSRM(lat1, lon1, lat2, lon2, profile = 'driving') {
     try {
-        const res = await fetch(`${OSRM_API}/${profile}/${lon1},${lat1};${lon2},${lat2}?geometries=geojson`);
+        // 🚀 OSRM 公用伺服器對 driving 支援最穩定，我們統一用其拉取地理軌跡與公里數
+        const res = await fetch(`${OSRM_API}/driving/${lon1},${lat1};${lon2},${lat2}?geometries=geojson`);
         if (!res.ok) return null; const data = await res.json();
-        return { path: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), km: (data.routes[0].distance / 1000).toFixed(2), rawMins: Math.ceil(data.routes[0].duration / 60) };
+        const km = (data.routes[0].distance / 1000).toFixed(2);
+        
+        // 💡 修正步速 Bug：若宣告為 'foot'，強制定速為人類正常步伐（1公里約14分鐘），徹底消滅5公里8分鐘的異常
+        let rawMins = (profile === 'foot') ? Math.ceil(km * 14) : Math.ceil(data.routes[0].duration / 60);
+        
+        return { path: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), km: km, rawMins: rawMins };
     } catch (e) { return null; }
 }
 
@@ -183,7 +189,7 @@ async function runRoutePlanning() {
 
     const outputRoutes = [];
 
-    // ==================== 1. 🚇 純捷運方案 (放寬至總步行距離 10 公里內) ====================
+    // ==================== 1. 🚇 純捷運方案 (總步行距離 <= 10km 才顯示) ====================
     let mrtStart = await getBestStationFromSet(originCoords, STATIONS_DATABASE.mrt);
     let mrtEnd = await getBestStationFromSet(destCoords, STATIONS_DATABASE.mrt);
     if (mrtStart && mrtEnd && mrtStart.station.name !== mrtEnd.station.name) {
@@ -205,7 +211,7 @@ async function runRoutePlanning() {
         }
     }
 
-    // ==================== 2. 🍏 輕軌專屬方案 (放寬至總步行距離 10 公里內) ====================
+    // ==================== 2. 🍏 輕軌專屬方案 (總步行距離 <= 10km 才顯示) ====================
     let lrtStart = await getBestStationFromSet(originCoords, STATIONS_DATABASE.lrt);
     let lrtEnd = await getBestStationFromSet(destCoords, STATIONS_DATABASE.lrt);
     if (lrtStart && lrtEnd && lrtStart.station.name !== lrtEnd.station.name) {
@@ -227,39 +233,35 @@ async function runRoutePlanning() {
         }
     }
 
-    // ==================== 3. 🚌 公車轉乘方案 (放寬至總步行距離 10 公里內) ====================
+    // ==================== 3. 🚌 公車轉乘方案 (🔥 配合乘客小資需求，完全不鎖步行門檻) ====================
     let bestStart = mrtStart; 
     let bestEnd = mrtEnd;
-    let leg1 = bestStart ? bestStart.walkLeg : null;
-    let leg3 = bestEnd ? bestEnd.walkLeg : null;
-
-    if (bestStart && leg1 && leg3) {
-        let totalWalkKm = parseFloat(leg1.km) + parseFloat(leg3.km);
-        if (totalWalkKm <= 10) {
+    if (bestStart && bestEnd) {
+        let leg1 = bestStart.walkLeg;
+        let leg3 = bestEnd.walkLeg;
+        if (leg1 && leg3) {
             let st1 = bestStart.station;
             let leg2 = await getRouteOSRM(st1.lat, st1.lon, bestEnd.station.lat, bestEnd.station.lon, 'driving');
             if (leg2) {
+                // 將原本較長的步行路段，轉化為公車行駛時間
                 let busMins = Math.ceil(parseFloat(leg1.km) * 3) + 5;
                 let totalMixedTime = Math.ceil(busMins + leg2.rawMins + leg3.rawMins + 6);
                 
-                // 依據原始商業邏輯，大於 800m 給予保姆級識別
-                let dynamicBadge = parseFloat(leg1.km) > 0.8 ? '🌟 保姆級公車轉乘方案' : '🚌 公車捷運轉乘方案';
-
                 outputRoutes.push({
-                    type: 'mixed', badge: dynamicBadge, 
-                    title: `🚌 搭乘公車 [${st1.busRoute}] 於【${st1.busStop}】下車`,
+                    type: 'mixed', badge: '🚌 公車捷運小資方案', 
+                    title: `🚌 搭乘公車 [${st1.busRoute}] ➔ 轉乘捷運`,
                     time: totalMixedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '35 元', color: '#f59e0b',
                     steps: [
                         { 
                             icon: '🚌', title: `搭乘公車 [${st1.busRoute}] 於【${st1.busStop}】下車`, mins: busMins, color: '#0ea5e9', path: leg1.path, nodeName: `[公車上車] 起點站牌`, markerCoord: [originCoords.lat, originCoords.lon],
-                            detail: `<div class="instruction-box">🚌 保姆級乘車指引：</div>
+                            detail: `<div class="instruction-box">🚌 小資公車乘車指引：</div>
                                      📍 <b>上車站點</b>：請前往起點附近最近的公車站牌。<br>
                                      🚌 <b>搭乘路線</b>：招手搭乘市區公車 <b>[ ${st1.busRoute} ]</b>。<br>
                                      📍 <b>下車站點</b>：請在 <b>【 ${st1.busStop} 】</b> 站牌按鈴下車。<br>
                                      🚶 <b>轉乘步行</b>：下車後步行約 1 分鐘即可進入捷運站。`
                         },
                         { icon: '🚇', title: `從【${st1.name}】搭乘捷運至【${bestEnd.station.name}】`, mins: leg2.rawMins, color: '#E60012', path: leg2.path, nodeName: `[轉乘] ${st1.name}`, markerCoord: [st1.lat, st1.lon], detail: `進入捷運月台，車程預計 ${leg2.rawMins} 分鐘。` },
-                        { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#10B981', path: leg3.path, nodeName: `[下車] ${bestEnd.station.name}`, markerCoord: [bestEnd.station.lat, bestEnd.station.lon], detail: `刷卡出站，沿林蔭人行道步行抵達目的地。` }
+                        { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#10B981', path: leg3.path, nodeName: `終點`, markerCoord: [destCoords.lat, destCoords.lon], detail: `刷卡出站，步行約 ${leg3.km} 公里抵達目的地。` }
                     ]
                 });
             }
@@ -287,7 +289,7 @@ async function runRoutePlanning() {
     // ==================== 綜合評估排序：時間效益最佳者置頂 ====================
     outputRoutes.sort((a, b) => a.time - b.time);
 
-    // 幫最快抵達的最佳大眾運輸方案冠上榮譽勳章
+    // 幫最快抵達的最佳方案冠上系統推薦標籤
     if (outputRoutes.length > 0) {
         outputRoutes[0].badge = '🏆 系統推薦最佳方案 | ' + outputRoutes[0].badge;
     }
@@ -374,7 +376,6 @@ function drawRouteOnMap(steps) {
             boundsPoints = boundsPoints.concat(s.path);
         }
         
-        // 🗺️ 地圖導航 UI 規範：強制使用 permanent: true 固定上車站、下車站名稱
         if (s.nodeName && s.markerCoord) {
             L.circleMarker(s.markerCoord, { radius: 7, fillColor: s.color, color: '#ffffff', weight: 2.5, fillOpacity: 1 }).addTo(mapLayers);
             
