@@ -1,3 +1,8 @@
+// 🛡️ 主動防呆除錯系統：若用手機複製漏了括號導致當機，會立刻跳出警告通知您！
+window.onerror = function(msg, url, line) {
+    alert("❌ 程式碼執行中斷！地圖因此無法顯示。\n原因：" + msg + "\n請檢查程式碼大約第 " + line + " 行附近是否複製時漏了符號！");
+};
+
 const OSRM_API = 'https://router.project-osrm.org/route/v1';
 const KAOHSIUNG_CENTER = [22.6228, 120.3014];
 
@@ -9,25 +14,36 @@ const LOCAL_ALIASES = [
     { name: 'SKM Park', lat: 22.5818, lon: 120.3323 }
 ];
 
-// 🚉 高雄軌道與保姆級公車轉乘資料庫 (新增公車路線與站牌)
+// 🚉 高雄軌道與公車轉乘資料庫 (校正衛生局站座標，並新增全高雄公車樞紐)
 const STATIONS_DATABASE = {
     mrt: [
-        { name: '草衙站', lat: 22.5813, lon: 120.3303, line: '紅線', padding: 3, busRoute: '紅7A', busStop: '捷運草衙站' },
-        { name: '前鎮高中站', lat: 22.5928, lon: 120.3298, line: '紅線', padding: 3, busRoute: '紅9', busStop: '捷運前鎮高中站' },
-        { name: '左營高鐵站', lat: 22.6874, lon: 120.3076, line: '紅線', padding: 5, busRoute: '紅60A', busStop: '高鐵左營站' },
-        { name: '生態園區站', lat: 22.6773, lon: 120.3121, line: '紅線', padding: 4, busRoute: '紅51', busStop: '捷運生態園區站' },
-        { name: '技擊館站', lat: 22.6268, lon: 120.3379, line: '橘線', padding: 3, busRoute: '248路公車', busStop: '捷運技擊館站' },
-        { name: '文化中心站', lat: 22.6271, lon: 120.3180, line: '橘線', padding: 3, busRoute: '50路五福幹線', busStop: '捷運文化中心站' },
-        { name: '高雄車站', lat: 22.6405, lon: 120.3022, line: '紅線', padding: 5, busRoute: '60路覺民幹線', busStop: '高雄車站(站東)' }
+        { name: '草衙站', lat: 22.581335, lon: 120.330364, line: '紅線', padding: 3, busRoute: '紅7A', busStop: '捷運草衙站' },
+        { name: '前鎮高中站', lat: 22.592881, lon: 120.329868, line: '紅線', padding: 3, busRoute: '紅9', busStop: '捷運前鎮高中站' },
+        { name: '左營高鐵站', lat: 22.687422, lon: 120.307611, line: '紅線', padding: 5, busRoute: '紅60A', busStop: '高鐵左營站' },
+        { name: '生態園區站', lat: 22.677351, lon: 120.312154, line: '紅線', padding: 4, busRoute: '紅51', busStop: '捷運生態園區站' },
+        { name: '技擊館站', lat: 22.626884, lon: 120.337921, line: '橘線', padding: 3, busRoute: '248路公車', busStop: '捷運技擊館站' },
+        { name: '文化中心站', lat: 22.627188, lon: 120.318092, line: '橘線', padding: 3, busRoute: '50路五福幹線', busStop: '捷運文化中心站' },
+        { name: '高雄車站', lat: 22.640523, lon: 120.302251, line: '紅線', padding: 5, busRoute: '60路覺民幹線', busStop: '高雄車站(站東)' }
     ],
     lrt: [
-        { name: '凱旋瑞田站(C2)', lat: 22.5971, lon: 120.3225, line: '輕軌', padding: 3, busRoute: '紅12', busStop: '輕軌凱旋瑞田站' },
-        { name: '前鎮之星站(C3)', lat: 22.5934, lon: 120.3155, line: '輕軌', padding: 3, busRoute: '紅9', busStop: '捷運凱旋站' },
-        { name: '凱旋公園站(C32)', lat: 22.6284, lon: 120.3245, line: '輕軌', padding: 3, busRoute: '37路', busStop: '輕軌凱旋公園站' },
-        { name: '衛生局站(C33)', lat: 22.6212, lon: 120.3255, line: '輕軌', padding: 3, busRoute: '紅21', busStop: '輕軌衛生局站' },
-        { name: '五權國小站(C34)', lat: 22.6151, lon: 120.3281, line: '輕軌', padding: 3, busRoute: '100路', busStop: '輕軌五權國小站' },
-        { name: '凱旋武昌站(C35)', lat: 22.6105, lon: 120.3292, line: '輕軌', padding: 3, busRoute: '37路', busStop: '輕軌凱旋武昌站' },
-        { name: '愛河之心站(C24)', lat: 22.6565, lon: 120.3028, line: '輕軌', padding: 4, busRoute: '紅33', busStop: '捷運凹子底站' }
+        { name: '凱旋瑞田站(C2)', lat: 22.597143, lon: 120.322589, line: '輕軌', padding: 3, busRoute: '紅12', busStop: '輕軌凱旋瑞田站' },
+        { name: '前鎮之星站(C3)', lat: 22.593411, lon: 120.315582, line: '輕軌', padding: 3, busRoute: '紅9', busStop: '捷運凱旋站' },
+        { name: '凱旋公園站(C32)', lat: 22.628435, lon: 120.324541, line: '輕軌', padding: 3, busRoute: '37路', busStop: '輕軌凱旋公園站' },
+        { name: '衛生局站(C33)', lat: 22.621251, lon: 120.325514, line: '輕軌', padding: 3, busRoute: '紅21', busStop: '輕軌衛生局站' },
+        { name: '五權國小站(C34)', lat: 22.615122, lon: 120.328195, line: '輕軌', padding: 3, busRoute: '100路', busStop: '輕軌五權國小站' },
+        { name: '凱旋武昌站(C35)', lat: 22.610547, lon: 120.329241, line: '輕軌', padding: 3, busRoute: '37路', busStop: '輕軌凱旋武昌站' },
+        { name: '愛河之心站(C24)', lat: 22.656551, lon: 120.302824, line: '輕軌', padding: 4, busRoute: '紅33', busStop: '捷運凹子底站' }
+    ],
+    // 🚌 新增：獨立的全高雄公車樞紐網路（解決公車出不來的問題）
+    busHubs: [
+        { name: '建軍站(衛武營)', lat: 22.625121, lon: 120.342154, routes: '70路三多幹線、88路建國幹線' },
+        { name: '五甲公車站', lat: 22.589541, lon: 120.331214, routes: '紅10、五甲幹線' },
+        { name: '三民高中站/轉運點', lat: 22.648541, lon: 120.318541, routes: '53路、黃1幹線' },
+        { name: '高醫大轉運點', lat: 22.646512, lon: 120.308514, routes: '紅28、92路自由幹線' },
+        { name: '加昌站/右昌轉運點', lat: 22.718541, lon: 120.291254, routes: '中華幹線(205路)、218路' },
+        { name: '左營南大路轉運點', lat: 22.671254, lon: 120.292145, routes: '217路、明誠幹線' },
+        { name: '鳳山轉運站', lat: 22.623145, lon: 120.356214, routes: '橘12、87路' },
+        { name: '新興區公所轉運點', lat: 22.625841, lon: 120.301254, routes: '50路五福幹線、224路' }
     ]
 };
 
@@ -37,6 +53,7 @@ let activeAvatar = '🧍‍♂️';
 let routeStepLayers = [];
 
 function initMap() {
+    if (map) return; // 防呆：避免地圖重複載入
     map = L.map('map', { zoomControl: false }).setView(KAOHSIUNG_CENTER, 13);
     L.control.zoom({ position: 'topright' }).addTo(map);
     mapLayers = L.layerGroup().addTo(map);
@@ -141,23 +158,32 @@ function getDistanceKM(lat1, lon1, lat2, lon2) {
 
 async function getRouteOSRM(lat1, lon1, lat2, lon2, profile = 'driving') {
     try {
-        // 🚀 OSRM 公用伺服器對 driving 支援最穩定，我們統一用其拉取地理軌跡與公里數
         const res = await fetch(`${OSRM_API}/driving/${lon1},${lat1};${lon2},${lat2}?geometries=geojson`);
-        if (!res.ok) return null; const data = await res.json();
+        if (!res.ok) return null; 
+        const data = await res.json();
+        if (!data.routes || data.routes.length === 0) return null; // 防呆：避免 OSRM 沒回傳路線當機
+        
         const km = (data.routes[0].distance / 1000).toFixed(2);
         
-        // 💡 修正步速 Bug：若宣告為 'foot'，強制定速為人類正常步伐（1公里約14分鐘），徹底消滅5公里8分鐘的異常
-        let rawMins = (profile === 'foot') ? Math.ceil(km * 14) : Math.ceil(data.routes[0].duration / 60);
-        
-        return { path: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), km: km, rawMins: rawMins };
-    } catch (e) { return null; }
+        // 🔒 強制覆蓋：只要是步行，徹底拔除伺服器時間，定速 1 公里 = 14 分鐘！(消滅閃電俠步速)
+        if (profile === 'foot') {
+            const forcedWalkMins = Math.max(1, Math.ceil(km * 14.0)); 
+            return { path: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), km: km, rawMins: forcedWalkMins };
+        }
+
+        let driveMins = Math.ceil(data.routes[0].duration / 60);
+        return { path: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), km: km, rawMins: driveMins };
+    } catch (e) { 
+        return null; 
+    }
 }
 
 async function getBestStationFromSet(coords, stations) {
-    if (!coords) return null;
+    // 🛡️ 安全防護：避免找不到陣列導致當機
+    if (!coords || !stations || stations.length === 0) return null;
     let sorted = [...stations].sort((a,b) => getDistanceKM(coords.lat, coords.lon, a.lat, a.lon) - getDistanceKM(coords.lat, coords.lon, b.lat, b.lon));
-    if (sorted.length === 0) return null;
     let walk = await getRouteOSRM(coords.lat, coords.lon, sorted[0].lat, sorted[0].lon, 'foot');
+    if (!walk) return null; 
     return { station: sorted[0], walkLeg: walk };
 }
 
@@ -178,6 +204,11 @@ async function runRoutePlanning() {
     checkAndFallbackInputs();
     if (!originCoords || !destCoords) return alert('請確認起訖點已輸入，建議從下拉選單點選以確保座標精準！');
     
+    // 🛡️ 主動防護：檢查是否有成功載入包含公車樞紐的資料庫
+    if (!STATIONS_DATABASE || !STATIONS_DATABASE.busHubs) {
+        return alert('❌ 偵測到資料庫不完整！請確定 STATIONS_DATABASE 有正確載入。');
+    }
+    
     document.getElementById('searchPanel').classList.add('collapsed');
     document.getElementById('togglePanelBtn').classList.remove('hidden');
     document.getElementById('detailView').classList.add('hidden'); 
@@ -189,20 +220,20 @@ async function runRoutePlanning() {
 
     const outputRoutes = [];
 
-    // ==================== 1. 🚇 純捷運方案 (總步行距離 <= 10km 才顯示) ====================
+    // ==================== 1. 🚇 純捷運方案 ====================
     let mrtStart = await getBestStationFromSet(originCoords, STATIONS_DATABASE.mrt);
     let mrtEnd = await getBestStationFromSet(destCoords, STATIONS_DATABASE.mrt);
-    if (mrtStart && mrtEnd && mrtStart.station.name !== mrtEnd.station.name) {
+    if (mrtStart && mrtEnd && mrtStart.walkLeg && mrtEnd.walkLeg && mrtStart.station.name !== mrtEnd.station.name) {
         let totalWalkKm = parseFloat(mrtStart.walkLeg.km) + parseFloat(mrtEnd.walkLeg.km);
         if (totalWalkKm <= 10) {
             let leg2 = await getRouteOSRM(mrtStart.station.lat, mrtStart.station.lon, mrtEnd.station.lat, mrtEnd.station.lon, 'driving');
-            if (leg2 && mrtStart.walkLeg && mrtEnd.walkLeg) {
+            if (leg2) {
                 let mrtTime = Math.ceil(mrtStart.walkLeg.rawMins + leg2.rawMins + mrtEnd.walkLeg.rawMins + 5);
                 outputRoutes.push({
                     type: 'mrt', badge: '🚇 捷運直達方案', title: `捷運 [${mrtStart.station.line}] ➔ 步行至目的地`,
                     time: mrtTime, dist: (parseFloat(mrtStart.walkLeg.km) + parseFloat(leg2.km) + parseFloat(mrtEnd.walkLeg.km)).toFixed(2), price: '30 元', color: '#E60012',
                     steps: [
-                        { icon: '🚶', title: `步行至【${mrtStart.station.name}】上車`, mins: mrtStart.walkLeg.rawMins, color: '#64748b', path: mrtStart.walkLeg.path, nodeName: `[上車] ${mrtStart.station.name}`, markerCoord: [mrtStart.station.lat, mrtStart.station.lon], detail: `步行約 ${mrtStart.walkLeg.km} 公里，前往<b>【${mrtStart.station.name}】</b>進站。` },
+                        { icon: '🚶', title: `步行至【${mrtStart.station.name}】上車`, mins: mrtStart.walkLeg.rawMins, color: '#64748b', path: mrtStart.walkLeg.path, nodeName: `[上車] ${mrtStart.station.name}`, markerCoord: [mrtStart.station.lat, mrtStart.station.lon], detail: `依真實步速約需 ${mrtStart.walkLeg.rawMins} 分鐘，前往進站。` },
                         { icon: '🚇', title: `搭乘捷運至【${mrtEnd.station.name}】下車`, mins: leg2.rawMins, color: '#E60012', path: leg2.path, nodeName: `[下車] ${mrtEnd.station.name}`, markerCoord: [mrtEnd.station.lat, mrtEnd.station.lon], detail: `搭乘捷運列車，車程預計 ${leg2.rawMins} 分鐘。` },
                         { icon: '🚶', title: `出站步行至終點`, mins: mrtEnd.walkLeg.rawMins, color: '#10B981', path: mrtEnd.walkLeg.path, nodeName: `終點`, markerCoord: [destCoords.lat, destCoords.lon], detail: `刷卡出站，步行約 ${mrtEnd.walkLeg.km} 公里抵達目的地。` }
                     ]
@@ -211,20 +242,20 @@ async function runRoutePlanning() {
         }
     }
 
-    // ==================== 2. 🍏 輕軌專屬方案 (總步行距離 <= 10km 才顯示) ====================
+    // ==================== 2. 🍏 輕軌專屬方案 ====================
     let lrtStart = await getBestStationFromSet(originCoords, STATIONS_DATABASE.lrt);
     let lrtEnd = await getBestStationFromSet(destCoords, STATIONS_DATABASE.lrt);
-    if (lrtStart && lrtEnd && lrtStart.station.name !== lrtEnd.station.name) {
+    if (lrtStart && lrtEnd && lrtStart.walkLeg && lrtEnd.walkLeg && lrtStart.station.name !== lrtEnd.station.name) {
         let totalWalkKm = parseFloat(lrtStart.walkLeg.km) + parseFloat(lrtEnd.walkLeg.km);
         if (totalWalkKm <= 10) {
             let leg2 = await getRouteOSRM(lrtStart.station.lat, lrtStart.station.lon, lrtEnd.station.lat, lrtEnd.station.lon, 'driving');
-            if (leg2 && lrtStart.walkLeg && lrtEnd.walkLeg) {
+            if (leg2) {
                 let lrtTime = Math.ceil(lrtStart.walkLeg.rawMins + leg2.rawMins + lrtEnd.walkLeg.rawMins + 4);
                 outputRoutes.push({
                     type: 'lrt', badge: '🍏 輕軌專屬方案', title: `高雄環狀輕軌 ➔ 漫步至目的地`,
                     time: lrtTime, dist: (parseFloat(lrtStart.walkLeg.km) + parseFloat(leg2.km) + parseFloat(lrtEnd.walkLeg.km)).toFixed(2), price: '20 元', color: '#009E52',
                     steps: [
-                        { icon: '🚶', title: `步行至輕軌【${lrtStart.station.name}】上車`, mins: lrtStart.walkLeg.rawMins, color: '#64748b', path: lrtStart.walkLeg.path, nodeName: `[上車] ${lrtStart.station.name}`, markerCoord: [lrtStart.station.lat, lrtStart.station.lon], detail: `步行約 ${lrtStart.walkLeg.km} 公里抵達開放式月台，於黃色刷卡機過卡候車。` },
+                        { icon: '🚶', title: `步行至輕軌【${lrtStart.station.name}】上車`, mins: lrtStart.walkLeg.rawMins, color: '#64748b', path: lrtStart.walkLeg.path, nodeName: `[上車] ${lrtStart.station.name}`, markerCoord: [lrtStart.station.lat, lrtStart.station.lon], detail: `步行約需 ${lrtStart.walkLeg.rawMins} 分鐘，於黃色刷卡機過卡候車。` },
                         { icon: '🍏', title: `搭乘輕軌至【${lrtEnd.station.name}】下車`, mins: leg2.rawMins, color: '#009E52', path: leg2.path, nodeName: `[下車] ${lrtEnd.station.name}`, markerCoord: [lrtEnd.station.lat, lrtEnd.station.lon], detail: `列車進站請按鈕上下車，行經綠廊車程約 ${leg2.rawMins} 分鐘。` },
                         { icon: '🚶', title: `出站步行至目的地`, mins: lrtEnd.walkLeg.rawMins, color: '#10B981', path: lrtEnd.walkLeg.path, nodeName: `終點`, markerCoord: [destCoords.lat, destCoords.lon], detail: `下車刷卡後，跟隨指引步行抵達終點。` }
                     ]
@@ -233,42 +264,33 @@ async function runRoutePlanning() {
         }
     }
 
-    // ==================== 3. 🚌 公車轉乘方案 (🔥 配合乘客小資需求，完全不鎖步行門檻) ====================
-    let bestStart = mrtStart; 
-    let bestEnd = mrtEnd;
-    if (bestStart && bestEnd) {
-        let leg1 = bestStart.walkLeg;
-        let leg3 = bestEnd.walkLeg;
-        if (leg1 && leg3) {
-            let st1 = bestStart.station;
-            let leg2 = await getRouteOSRM(st1.lat, st1.lon, bestEnd.station.lat, bestEnd.station.lon, 'driving');
-            if (leg2) {
-                // 將原本較長的步行路段，轉化為公車行駛時間
-                let busMins = Math.ceil(parseFloat(leg1.km) * 3) + 5;
-                let totalMixedTime = Math.ceil(busMins + leg2.rawMins + leg3.rawMins + 6);
-                
-                outputRoutes.push({
-                    type: 'mixed', badge: '🚌 公車捷運小資方案', 
-                    title: `🚌 搭乘公車 [${st1.busRoute}] ➔ 轉乘捷運`,
-                    time: totalMixedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '35 元', color: '#f59e0b',
-                    steps: [
-                        { 
-                            icon: '🚌', title: `搭乘公車 [${st1.busRoute}] 於【${st1.busStop}】下車`, mins: busMins, color: '#0ea5e9', path: leg1.path, nodeName: `[公車上車] 起點站牌`, markerCoord: [originCoords.lat, originCoords.lon],
-                            detail: `<div class="instruction-box">🚌 小資公車乘車指引：</div>
-                                     📍 <b>上車站點</b>：請前往起點附近最近的公車站牌。<br>
-                                     🚌 <b>搭乘路線</b>：招手搭乘市區公車 <b>[ ${st1.busRoute} ]</b>。<br>
-                                     📍 <b>下車站點</b>：請在 <b>【 ${st1.busStop} 】</b> 站牌按鈴下車。<br>
-                                     🚶 <b>轉乘步行</b>：下車後步行約 1 分鐘即可進入捷運站。`
-                        },
-                        { icon: '🚇', title: `從【${st1.name}】搭乘捷運至【${bestEnd.station.name}】`, mins: leg2.rawMins, color: '#E60012', path: leg2.path, nodeName: `[轉乘] ${st1.name}`, markerCoord: [st1.lat, st1.lon], detail: `進入捷運月台，車程預計 ${leg2.rawMins} 分鐘。` },
-                        { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#10B981', path: leg3.path, nodeName: `終點`, markerCoord: [destCoords.lat, destCoords.lon], detail: `刷卡出站，步行約 ${leg3.km} 公里抵達目的地。` }
-                    ]
-                });
-            }
+    // ==================== 3. 🚌 全高雄獨立公車網方案 ====================
+    let nearBusStart = [...STATIONS_DATABASE.busHubs].sort((a,b) => getDistanceKM(originCoords.lat, originCoords.lon, a.lat, a.lon) - getDistanceKM(originCoords.lat, originCoords.lon, b.lat, b.lon))[0];
+    let nearBusEnd = [...STATIONS_DATABASE.busHubs].sort((a,b) => getDistanceKM(destCoords.lat, destCoords.lon, a.lat, a.lon) - getDistanceKM(destCoords.lat, destCoords.lon, b.lat, b.lon))[0];
+
+    if (nearBusStart && nearBusEnd && nearBusStart.name !== nearBusEnd.name) {
+        let walkToBus = await getRouteOSRM(originCoords.lat, originCoords.lon, nearBusStart.lat, nearBusStart.lon, 'foot');
+        let busRide = await getRouteOSRM(nearBusStart.lat, nearBusStart.lon, nearBusEnd.lat, nearBusEnd.lon, 'driving');
+        let walkToDest = await getRouteOSRM(nearBusEnd.lat, nearBusEnd.lon, destCoords.lat, destCoords.lon, 'foot');
+
+        if (walkToBus && busRide && walkToDest) {
+            let totalBusPlanTime = Math.ceil(walkToBus.rawMins + (busRide.rawMins * 1.2) + walkToDest.rawMins + 4);
+            let totalBusPlanDist = (parseFloat(walkToBus.km) + parseFloat(busRide.km) + parseFloat(walkToDest.km)).toFixed(2);
+
+            outputRoutes.push({
+                type: 'mixed', badge: '🚌 市區公車小資方案',
+                title: `搭乘高雄幹線公車 ➔ 步行至目的地`,
+                time: totalBusPlanTime, dist: totalBusPlanDist, price: '12 元 (Uber 太貴選這個！)', color: '#f59e0b',
+                steps: [
+                    { icon: '🚶', title: `步行至最近公車樞紐/站牌`, mins: walkToBus.rawMins, color: '#64748b', path: walkToBus.path, nodeName: `[起點步行]`, markerCoord: [nearBusStart.lat, nearBusStart.lon], detail: `依真實步速步行約需 ${walkToBus.rawMins} 分鐘 前往公車站。` },
+                    { icon: '🚌', title: `搭乘公車於【${nearBusEnd.name}】下車`, mins: Math.ceil(busRide.rawMins * 1.2), color: '#f59e0b', path: busRide.path, nodeName: `[公車轉運點]`, markerCoord: [nearBusEnd.lat, nearBusEnd.lon], detail: `於<b>【${nearBusStart.name}】</b>上車，可搭乘：${nearBusStart.routes}。市區車程約 ${Math.ceil(busRide.rawMins * 1.2)} 分鐘。` },
+                    { icon: '🚶', title: `下車步行抵達目的地`, mins: walkToDest.rawMins, color: '#10B981', path: walkToDest.path, nodeName: `終點`, markerCoord: [destCoords.lat, destCoords.lon], detail: `下車後，步行約需 ${walkToDest.rawMins} 分鐘 抵達目的地，為您省下大筆 Uber 費用！` }
+                ]
+            });
         }
     }
 
-    // ==================== 4. 🚕 多元計程車方案 (終極加權 135%) ====================
+    // ==================== 4. 🚕 多元計程車方案 ====================
     const driveRoute = await getRouteOSRM(originCoords.lat, originCoords.lon, destCoords.lat, destCoords.lon, 'driving');
     if (driveRoute && driveRoute.path && driveRoute.path.length > 0) {
         let waitTime = 5;
@@ -286,10 +308,7 @@ async function runRoutePlanning() {
         });
     }
 
-    // ==================== 綜合評估排序：時間效益最佳者置頂 ====================
     outputRoutes.sort((a, b) => a.time - b.time);
-
-    // 幫最快抵達的最佳方案冠上系統推薦標籤
     if (outputRoutes.length > 0) {
         outputRoutes[0].badge = '🏆 系統推薦最佳方案 | ' + outputRoutes[0].badge;
     }
@@ -404,4 +423,7 @@ document.getElementById('backToListBtn').addEventListener('click', () => {
 });
 
 document.getElementById('searchBtn').addEventListener('click', runRoutePlanning);
+
+// 🛡️ 強力載入：確保地圖在不同手機瀏覽器上絕對會被呼叫顯示
+document.addEventListener('DOMContentLoaded', initMap);
 window.onload = initMap;

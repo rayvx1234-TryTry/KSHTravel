@@ -89,8 +89,10 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
 .spinner { width: 26px; height: 26px; border: 3px solid var(--border-color); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.map-area { flex: 1; position: relative; height: 100%; }
-#map { width: 100%; height: 100%; background: #e2e8f0; z-index: 1; }
+/* 🔥 解決筆電上地圖不見的核心修正 */
+.map-area { flex: 1; position: relative; height: 100%; min-height: 100vh; }
+#map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; width: 100%; height: 100%; background: #e2e8f0; z-index: 1; }
+
 .dynamic-avatar-icon { font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); animation: bounce 2s infinite; text-align: center; }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .map-node-tooltip { background: var(--sidebar-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-color) !important; border-radius: 4px !important; font-weight: 700 !important; font-size: 11px !important; padding: 2px 6px !important; }
@@ -99,7 +101,7 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
 @media (max-width: 768px) {
     body { flex-direction: column; overflow: hidden; }
     .app-container { flex-direction: column; }
-    .map-area { order: 1; width: 100%; height: 40vh; flex: none; border-bottom: 2px solid var(--border-color); }
+    .map-area { order: 1; width: 100%; height: 40vh; min-height: auto; flex: none; border-bottom: 2px solid var(--border-color); }
     .sidebar { order: 2; width: 100%; height: 60vh; flex: none; border-right: none; box-shadow: 0 -2px 15px rgba(0,0,0,0.05); }
     
     header { padding: 10px 16px; }
