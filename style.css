@@ -109,6 +109,7 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
 }
 
 [data-theme="dark"] input, [data-theme="dark"] .autocomplete-item, [data-theme="dark"] .card-title, [data-theme="dark"] .detail-main-title, [data-theme="dark"] .step-title, [data-theme="dark"] .sub-step-details, [data-theme="dark"] .meta-value, [data-theme="dark"] .swap-btn { color: var(--text-main); }
+
 /* 🍏 各運具方案卡片的專屬視覺微調 */
 .badge-tag {
     display: inline-block;
