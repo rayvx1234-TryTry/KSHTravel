@@ -147,7 +147,7 @@ async function getRouteOSRM(lat1, lon1, lat2, lon2, profile = 'driving') {
         const km = (data.routes[0].distance / 1000).toFixed(2);
         
         // 💡 修正步速 Bug：若宣告為 'foot'，強制定速為人類正常步伐（1公里約14分鐘），徹底消滅5公里8分鐘的異常
-        let rawMins = (profile === 'foot') ? Math.ceil(km * 14) : Math.ceil(data.routes[0].duration / 60);
+        let rawMins = (profile === 'foot') ? Math.ceil(km *8) : Math.ceil(data.routes[0].duration / 60);
         
         return { path: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), km: km, rawMins: rawMins };
     } catch (e) { return null; }
