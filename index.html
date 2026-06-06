@@ -12,10 +12,13 @@
         <aside class="sidebar">
             <header>
                 <div class="logo">🚆 K-Transit PRO<br><span>高雄全能綜合轉乘系統</span></div>
-                <button id="themeToggle" class="icon-btn theme-btn">🌙</button>
+                <div class="header-actions">
+                    <button id="togglePanelBtn" class="icon-btn hidden" title="展開搜尋面板">🔍</button>
+                    <button id="themeToggle" class="icon-btn theme-btn">🌙</button>
+                </div>
             </header>
 
-            <div class="control-panel">
+            <div id="searchPanel" class="control-panel">
                 <div class="avatar-selector">
                     <span>角色：</span>
                     <button class="avatar-btn active" data-avatar="🧍‍♂️">🧍‍♂️</button>
@@ -29,7 +32,7 @@
                     <div class="input-wrapper">
                         <span class="input-icon">📍</span>
                         <input type="text" id="originInput" placeholder="輸入起點 或 使用目前位置" data-location-type="origin" autocomplete="off">
-                        <button id="useLocationBtn" class="icon-btn small location-btn">🎯</button>
+                        <button id="useLocationBtn" class="icon-btn small location-btn" title="使用當前定位">🎯</button>
                         <div id="originDropdown" class="autocomplete-dropdown hidden"></div>
                     </div>
                     
@@ -44,9 +47,9 @@
 
                 <div class="link-shortcuts">
                     <div class="shortcut-tag tag-mixed">🌟 最佳綜合</div>
-                    <a href="https://www.krtc.com.tw/Guide/timetable" target="_blank" class="shortcut-tag tag-mrt">🚇 捷運時刻表 🔗</a>
-                    <a href="https://www.krtc.com.tw/KLRT/klrt_timetable" target="_blank" class="shortcut-tag tag-lrt">🍏 輕軌時刻表 🔗</a>
-                    <a href="https://ibus.tbkc.gov.tw/ibus/" target="_blank" class="shortcut-tag tag-bus">🚌 公車動態 🔗</a>
+                    <a href="https://www.krtc.com.tw/Guide/timetable" target="_blank" class="shortcut-tag tag-mrt">🚇 捷運 🔗</a>
+                    <a href="https://www.krtc.com.tw/KLRT/klrt_timetable" target="_blank" class="shortcut-tag tag-lrt">🍏 輕軌 🔗</a>
+                    <a href="https://ibus.tbkc.gov.tw/ibus/" target="_blank" class="shortcut-tag tag-bus">🚌 公車 🔗</a>
                 </div>
 
                 <button id="searchBtn" class="primary-btn">規劃最佳路線</button>
@@ -55,7 +58,7 @@
             <div id="resultsArea" class="results-area">
                 <div id="loadingIndicator" class="hidden loading-box">
                     <div class="spinner"></div>
-                    <p>綜合演算法精算中...</p>
+                    <p>智慧跨運具演算法精算中...</p>
                 </div>
                 
                 <div id="listView">
