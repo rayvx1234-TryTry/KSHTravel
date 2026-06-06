@@ -3,26 +3,16 @@ const KAOHSIUNG_CENTER = [22.6228, 120.3014];
 
 const LOCAL_ALIASES = [
     { name: '高師大附中', lat: 22.6260, lon: 120.3236 },
-    { name: '高雄榮總', lat: 22.6785, lon: 120.3195 }
+    { name: '高雄榮總', lat: 22.6785, lon: 120.3195 },
+    { name: '九如', lat: 22.6398, lon: 120.3445 } // 精準校正高雄九如一路周邊坐標
 ];
 
 const STATIONS_DATABASE = {
     mrt: [
-        { name: '左營高鐵站', lat: 22.6874, lon: 120.3076, line: '紅線', padding: 5 },
-        { name: '巨蛋站', lat: 22.6659, lon: 120.3023, line: '紅線', padding: 3 },
-        { name: '凹子底站', lat: 22.6575, lon: 120.3027, line: '紅線', padding: 4 },
-        { name: '高雄車站', lat: 22.6405, lon: 120.3022, line: '紅線', padding: 5 },
-        { name: '美麗島站', lat: 22.6314, lon: 120.3019, line: '轉乘樞紐', padding: 5 },
-        { name: '中央公園站', lat: 22.6247, lon: 120.3018, line: '紅線', padding: 3 },
-        { name: '三多商圈站', lat: 22.6139, lon: 120.3046, line: '紅線', padding: 3 },
-        { name: '文化中心站', lat: 22.6271, lon: 120.3180, line: '橘線', padding: 3 },
-        { name: '五塊厝站', lat: 22.6288, lon: 120.3298, line: '橘線', padding: 3 },
-        { name: '衛武營站', lat: 22.6248, lon: 120.3404, line: '橘線', padding: 4 }
-    ],
-    lightrail: [
-        { name: 'C32 凱旋公園站', lat: 22.6295, lon: 120.3233, line: '環狀輕軌', padding: 2 },
-        { name: 'C33 衛生局站', lat: 22.6246, lon: 120.3239, line: '環狀輕軌', padding: 2 },
-        { name: 'C24 愛河之心站', lat: 22.6595, lon: 120.3028, line: '環狀輕軌', padding: 2 }
+        { name: '左營高鐵站', lat: 22.6874, lon: 120.3076, line: '紅線', padding: 5, busRoute: '紅60A', busStop: '高鐵左營站' },
+        { name: '技擊館站', lat: 22.6268, lon: 120.3379, line: '橘線', padding: 3, busRoute: '248路', busStop: '捷運技擊館站' },
+        { name: '文化中心站', lat: 22.6271, lon: 120.3180, line: '橘線', padding: 3, busRoute: '五福幹線', busStop: '捷運文化中心站' },
+        { name: '高雄車站', lat: 22.6405, lon: 120.3022, line: '紅線', padding: 5, busRoute: '60路覺民幹線', busStop: '高雄車站(站東)' }
     ]
 };
 
@@ -37,12 +27,16 @@ function initMap() {
     mapLayers = L.layerGroup().addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
-
-    // 💡 防止手機端上下切換時 Leaflet 地圖區塊渲染不完全的關鍵
     setTimeout(() => { map.invalidateSize(); }, 400);
 }
+
+// 展開與收合搜尋面板切換事件
+document.getElementById('togglePanelBtn').addEventListener('click', () => {
+    const panel = document.getElementById('searchPanel');
+    panel.classList.remove('collapsed');
+    document.getElementById('togglePanelBtn').classList.add('hidden');
+    setTimeout(() => map.invalidateSize(), 300);
+});
 
 document.getElementById('themeToggle').addEventListener('click', () => {
     const html = document.documentElement;
@@ -58,7 +52,7 @@ document.querySelectorAll('.avatar-btn').forEach(btn => {
     });
 });
 
-// 🍎 iOS 寬容度優化定位
+// iOS 定位支援
 document.getElementById('useLocationBtn').addEventListener('click', () => {
     if (!navigator.geolocation) return alert('您的瀏覽器不支援定位功能');
     const inputField = document.getElementById('originInput');
@@ -70,14 +64,9 @@ document.getElementById('useLocationBtn').addEventListener('click', () => {
             originCoords = userCoords;
             inputField.value = `📍 我的目前位置`;
             map.flyTo([userCoords.lat, userCoords.lon], 15);
-            setTimeout(() => map.invalidateSize(), 300);
         },
         (err) => { 
-            let msg = '定位失敗。';
-            if(err.code === 1) msg = '權限被拒絕，請在 iOS 設定 -> 隱私權與安全性 -> 定位服務 中將瀏覽器改為允許位置。';
-            if(err.code === 2) msg = 'GPS 訊號不佳，請移至窗邊或室外再試一次。';
-            if(err.code === 3) msg = '連線超時，請確認目前網路狀態。';
-            alert(msg);
+            alert('無法取得位置。iOS 用戶請至 設定 -> 隱私權 -> 定位服務 中，確認瀏覽器定位權限已開啟。');
             inputField.value = ""; 
         },
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
@@ -161,14 +150,21 @@ async function getTrueBestStation(coords, stations) {
 }
 
 async function runRoutePlanning() {
-    if (!originCoords || !destCoords) return alert('請先輸入起訖點並從選單點選建議地址！');
-    document.getElementById('detailView').classList.add('hidden'); document.getElementById('listView').classList.remove('hidden');
-    const container = document.getElementById('routesContainer'); const loading = document.getElementById('loadingIndicator');
+    if (!originCoords || !destCoords) return alert('請確認起訖點皆已從選單點選！');
+    
+    // 🔍 1. 智慧縮小 UI：隱藏搜尋面板，留給列表和資訊卡最大空間
+    document.getElementById('searchPanel').classList.add('collapsed');
+    document.getElementById('togglePanelBtn').classList.remove('hidden');
+
+    document.getElementById('detailView').classList.add('hidden'); 
+    document.getElementById('listView').classList.remove('hidden');
+    
+    const container = document.getElementById('routesContainer'); 
+    const loading = document.getElementById('loadingIndicator');
     loading.classList.remove('hidden'); container.innerHTML = ''; mapLayers.clearLayers(); routeStepLayers = [];
 
     const outputRoutes = [];
 
-    // 🌟 全自動智慧跨運具混合排程 (固定全開，不受舊篩選按鈕干擾)
     let bestStart = await getTrueBestStation(originCoords, STATIONS_DATABASE.mrt);
     let bestEnd = await getTrueBestStation(destCoords, STATIONS_DATABASE.mrt);
     let st1 = bestStart.station, st2 = bestEnd.station;
@@ -177,59 +173,72 @@ async function runRoutePlanning() {
     if (st1.name !== st2.name && leg1 && leg3) {
         const leg2 = await getRouteOSRM(st1.lat, st1.lon, st2.lat, st2.lon, 'driving');
         if (leg2) {
-            let startMode = '🚶'; let startMins = leg1.rawMins; let startTitle = `步行至 ${st1.name}`; let startDetail = `沿人行道步行前往車站。`;
+            let startMode = '🚶'; let startMins = leg1.rawMins; 
+            let startTitle = `步行至 ${st1.name}`; 
+            
+            // 🚌 2. 保姆級細節：當距離超過 1.5km 時，自動轉換為接駁車，並告訴他「怎麼搭、搭去哪」
+            let startDetail = `從起點步行約 <b>${leg1.km} 公里</b> 前往捷運站。`;
             let isMixed = false;
+            
             if (parseFloat(leg1.km) > 1.5) {
                 isMixed = true;
-                startMode = '🚲'; startMins = Math.ceil(parseFloat(leg1.km) * 4); startTitle = `搭乘公車或騎 YouBike ➔ ${st1.name}`;
-                startDetail = `起點離捷運站較遠 (${leg1.km} 公里)，系統強烈建議轉搭接駁公車或騎乘 YouBike 前往，切勿徒步。`;
+                startMode = '🚌'; 
+                startMins = Math.ceil(parseFloat(leg1.km) * 3) + 4; // 車程+等車
+                startTitle = `於附近站牌搭乘接駁公車 ➔ ${st1.name}`;
+                
+                // 這裡注入真正的導航靈魂：明明白白告訴使用者怎麼坐！
+                startDetail = `
+                    <div class="instruction-box">🚌 保姆級公車乘車指引：</div>
+                    1. 請從起點步行 2 分鐘前往最近的公車站牌。<br>
+                    2. 自由選擇搭乘 <b>高雄市公車 [${st1.busRoute}]</b>（往高鐵/捷運方向）。<br>
+                    3. 行經約 ${Math.ceil(parseFloat(leg1.km)*2)} 分鐘後，請在 <b>【${st1.busStop}】</b> 下車。<br>
+                    4. 下車後跟隨指標步行 1 分鐘，即可順利進入捷運地下月台。
+                `;
             }
             
             let mrtDriveMins = Math.ceil(parseFloat(leg2.km) * 1.5);
             let rawTime = startMins + mrtDriveMins + 4 + st1.padding + st2.padding + leg3.rawMins;
             let bufferedTime = Math.ceil(rawTime * 1.1);
             
+            let endDetail = `
+                <div class="instruction-box">🚶 目的地指引：</div>
+                從 <b>【${st2.name}】</b> 刷卡出站，跟隨隨行導航地圖，沿人行道步行約 <b>${leg3.km} 公里</b> (${leg3.rawMins}分鐘) 即可抵達目的地。
+            `;
+
             outputRoutes.push({
                 type: isMixed ? 'mixed' : 'mrt', 
-                badge: isMixed ? '🌟 系統推薦最佳綜合方案' : '🚇 捷運直達最速方案', 
-                title: `${startMode} 接駁 ➔ 捷運 ➔ 🚶 抵達`,
-                time: bufferedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '30 元', 
+                badge: isMixed ? '🌟 系統推薦：最佳跨運具綜合方案' : '🚇 捷運直達最速方案', 
+                title: `${startMode} 接駁 ➔ 捷運 [${st1.line}] ➔ 🚶 步行`,
+                time: bufferedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '32 元', 
                 color: isMixed ? '#f59e0b' : '#E60012',
                 steps: [
                     { icon: startMode, title: startTitle, mins: startMins, color: '#0ea5e9', path: leg1.path, nodeName: `${st1.name}`, markerCoord: [st1.lat, st1.lon], detail: startDetail },
-                    { icon: '🚇', title: `搭乘高雄捷運 [${st1.line}]`, mins: mrtDriveMins + 4, color: '#E60012', path: leg2.path, nodeName: `${st2.name}`, markerCoord: [st2.lat, st2.lon], detail: `搭乘捷運，車程預計 ${mrtDriveMins} 分鐘。` },
-                    { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#0ea5e9', path: leg3.path, nodeName: `目的地`, markerCoord: [destCoords.lat, destCoords.lon], detail: `刷卡出站，步行抵達終點。` }
+                    { icon: '🚇', title: `搭乘高雄捷運 [${st1.line}]`, mins: mrtDriveMins + 4, color: '#E60012', path: leg2.path, nodeName: `${st2.name}`, markerCoord: [st2.lat, st2.lon], detail: `進入月台搭乘捷運。通過高速鐵路/捷運線，預計行經 ${mrtDriveMins} 分鐘。` },
+                    { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#10B981', path: leg3.path, nodeName: `目的地`, markerCoord: [destCoords.lat, destCoords.lon], detail: endDetail }
                 ]
             });
         }
     }
 
-    let isTooLong = outputRoutes.length === 0 || outputRoutes.some(rt => rt.time >= 50);
+    // 當大眾運輸耗時太長時，自動配對 Uber 作為最後備案
+    let isTooLong = outputRoutes.length === 0 || outputRoutes.some(rt => rt.time >= 45);
     if (isTooLong) {
         const driveRoute = await getRouteOSRM(originCoords.lat, originCoords.lon, destCoords.lat, destCoords.lon, 'driving');
         if (driveRoute) {
-            let waitTime = 5;
-            let totalUberTime = driveRoute.rawMins + waitTime;
+            let waitTime = 5; let totalUberTime = driveRoute.rawMins + waitTime;
             let price = Math.ceil(85 + (parseFloat(driveRoute.km) * 25));
-
             outputRoutes.push({
-                type: 'uber', badge: '🚕 建議方案：改搭 Uber 直達', title: `多元計程車直達`, color: '#334155',
+                type: 'uber', badge: '🚕 備用方案：直達計程車', title: `多元計程車直達車`, color: '#334155',
                 time: totalUberTime, dist: driveRoute.km, price: `約 ${price} 元`,
                 steps: [
-                    { icon: '📱', title: `線上叫車與等候`, mins: waitTime, color: '#334155', path: [], nodeName: null, detail: `因距離較遠或跨運具耗時，建議叫車節省時間。` },
-                    { icon: '🚕', title: `專車派送直達`, mins: driveRoute.rawMins, color: '#0f172a', path: driveRoute.path, nodeName: `目的地`, markerCoord: [destCoords.lat, destCoords.lon], detail: `車程約 ${driveRoute.rawMins} 分鐘。` }
+                    { icon: '📱', title: `線上叫車與等候`, mins: waitTime, color: '#475569', path: [], nodeName: null, detail: `大眾運輸接駁距離過遠，建議點擊開啟 Uber 或呼叫計程車。` },
+                    { icon: '🚕', title: `專車派送直達`, mins: driveRoute.rawMins, color: '#1e293b', path: driveRoute.path, nodeName: `目的地`, markerCoord: [destCoords.lat, destCoords.lon], detail: `走最佳公路效率，不需轉乘，預計車程 ${driveRoute.rawMins} 分鐘。` }
                 ]
             });
         }
     }
 
-    // 排序：不論如何，只要符合綜合(mixed)的優先排在最上面
-    outputRoutes.sort((a,b) => {
-        if (a.type === 'mixed') return -1;
-        if (b.type === 'mixed') return 1;
-        return a.time - b.time;
-    });
-    
+    outputRoutes.sort((a,b) => (a.type === 'mixed') ? -1 : (b.type === 'mixed') ? 1 : a.time - b.time);
     renderRouteList(outputRoutes);
     loading.classList.add('hidden');
     setTimeout(() => map.invalidateSize(), 300);
@@ -237,13 +246,13 @@ async function runRoutePlanning() {
 
 function renderRouteList(routes) {
     const container = document.getElementById('routesContainer');
-    if (routes.length === 0) { container.innerHTML = '<p class="empty-state">查無可行路線，請嘗試更換地址。</p>'; return; }
+    if (routes.length === 0) { container.innerHTML = '<p class="empty-state">查無最優路線，請重試。</p>'; return; }
     routes.forEach((rt, idx) => {
         const card = document.createElement('div'); card.className = 'route-card';
         card.innerHTML = `
             <span class="badge" style="background:${rt.color}15; color:${rt.color}">${rt.badge}</span>
             <div class="card-title">${rt.title}</div>
-            <div class="card-meta">⏱️ 總時: <b>${rt.time} 分鐘</b> | 🛣️ ${rt.dist} km</div>
+            <div class="card-meta">⏱️ 推算時間: <b>${rt.time} 分鐘</b> | 🛣️ ${rt.dist} km</div>
         `;
         card.addEventListener('click', () => toggleToDetailView(rt, rt.color));
         container.appendChild(card);
@@ -262,7 +271,7 @@ function toggleToDetailView(route, themeColor) {
                 <div class="step-body">
                     <div class="clickable-step-header" onclick="toggleSubStepDetail(${index})">
                         <span class="step-title">${s.title} (${s.mins}分)</span>
-                        ${s.path && s.path.length > 0 ? `<span class="click-hint">展開路徑 ▾</span>` : `<span class="click-hint" style="color:#8B5CF6">指引 ▾</span>`}
+                        <span class="click-hint">查看保姆級指引 ▾</span>
                     </div>
                     <div id="subStep-${index}" class="sub-step-details hidden">${s.detail}</div>
                 </div>
@@ -306,7 +315,7 @@ function drawRouteOnMap(steps) {
     
     steps.forEach((s, index) => {
         if(s.path && s.path.length > 0) {
-            let polyline = L.polyline(s.path, { color: s.color, weight: 6, opacity: 0.85, dashArray: s.icon === '🚶' ? '5, 8' : 'none' }).addTo(mapLayers);
+            let polyline = L.polyline(s.path, { color: s.color, weight: 6, opacity: 0.85, dashArray: (s.icon === '🚶' || s.icon === '🚲') ? '5, 8' : 'none' }).addTo(mapLayers);
             routeStepLayers.push({ index: index, layer: polyline });
             boundsPoints = boundsPoints.concat(s.path);
         }
