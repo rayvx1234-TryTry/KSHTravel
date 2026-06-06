@@ -42,11 +42,11 @@
                     </div>
                 </div>
 
-                <div class="filters">
-                    <button class="filter-tag active" data-transit="mixed">🌟 最佳綜合</button>
-                    <button class="filter-tag active" data-transit="mrt">捷運</button>
-                    <button class="filter-tag active" data-transit="lightrail">輕軌</button>
-                    <button class="filter-tag active" data-transit="bus">公車</button>
+                <div class="link-shortcuts">
+                    <div class="shortcut-tag tag-mixed">🌟 最佳綜合</div>
+                    <a href="https://www.krtc.com.tw/Guide/timetable" target="_blank" class="shortcut-tag tag-mrt">🚇 捷運時刻表 🔗</a>
+                    <a href="https://www.krtc.com.tw/KLRT/klrt_timetable" target="_blank" class="shortcut-tag tag-lrt">🍏 輕軌時刻表 🔗</a>
+                    <a href="https://ibus.tbkc.gov.tw/ibus/" target="_blank" class="shortcut-tag tag-bus">🚌 公車動態 🔗</a>
                 </div>
 
                 <button id="searchBtn" class="primary-btn">規劃最佳路線</button>
@@ -73,10 +73,7 @@
 
         <main class="map-area">
             <div id="map"></div>
-            <div id="avatarToast" class="toast hidden"></div>
         </main>
-
-        <button id="mobileToggleBtn" class="mobile-toggle-btn hidden">🗺️ 切換地圖</button>
     </div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
