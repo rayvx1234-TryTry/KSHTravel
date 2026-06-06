@@ -183,11 +183,12 @@ async function runRoutePlanning() {
 
     const outputRoutes = [];
 
-    // ==================== 1. 🚇 純捷運方案 (放寬容忍度至 2.5km) ====================
+    // ==================== 1. 🚇 純捷運方案 (放寬至總步行距離 10 公里內) ====================
     let mrtStart = await getBestStationFromSet(originCoords, STATIONS_DATABASE.mrt);
     let mrtEnd = await getBestStationFromSet(destCoords, STATIONS_DATABASE.mrt);
     if (mrtStart && mrtEnd && mrtStart.station.name !== mrtEnd.station.name) {
-        if (parseFloat(mrtStart.walkLeg.km) <= 2.5 && parseFloat(mrtEnd.walkLeg.km) <= 2.5) {
+        let totalWalkKm = parseFloat(mrtStart.walkLeg.km) + parseFloat(mrtEnd.walkLeg.km);
+        if (totalWalkKm <= 10) {
             let leg2 = await getRouteOSRM(mrtStart.station.lat, mrtStart.station.lon, mrtEnd.station.lat, mrtEnd.station.lon, 'driving');
             if (leg2 && mrtStart.walkLeg && mrtEnd.walkLeg) {
                 let mrtTime = Math.ceil(mrtStart.walkLeg.rawMins + leg2.rawMins + mrtEnd.walkLeg.rawMins + 5);
@@ -204,11 +205,12 @@ async function runRoutePlanning() {
         }
     }
 
-    // ==================== 2. 🍏 輕軌專屬方案 (放寬容忍度至 2.5km) ====================
+    // ==================== 2. 🍏 輕軌專屬方案 (放寬至總步行距離 10 公里內) ====================
     let lrtStart = await getBestStationFromSet(originCoords, STATIONS_DATABASE.lrt);
     let lrtEnd = await getBestStationFromSet(destCoords, STATIONS_DATABASE.lrt);
     if (lrtStart && lrtEnd && lrtStart.station.name !== lrtEnd.station.name) {
-        if (parseFloat(lrtStart.walkLeg.km) <= 2.5 && parseFloat(lrtEnd.walkLeg.km) <= 2.5) {
+        let totalWalkKm = parseFloat(lrtStart.walkLeg.km) + parseFloat(lrtEnd.walkLeg.km);
+        if (totalWalkKm <= 10) {
             let leg2 = await getRouteOSRM(lrtStart.station.lat, lrtStart.station.lon, lrtEnd.station.lat, lrtEnd.station.lon, 'driving');
             if (leg2 && lrtStart.walkLeg && lrtEnd.walkLeg) {
                 let lrtTime = Math.ceil(lrtStart.walkLeg.rawMins + leg2.rawMins + lrtEnd.walkLeg.rawMins + 4);
@@ -225,37 +227,42 @@ async function runRoutePlanning() {
         }
     }
 
-    // ==================== 3. 🚌 保姆級公車轉乘方案 (步距>800m強制顯示) ====================
+    // ==================== 3. 🚌 公車轉乘方案 (放寬至總步行距離 10 公里內) ====================
     let bestStart = mrtStart; 
     let bestEnd = mrtEnd;
     let leg1 = bestStart ? bestStart.walkLeg : null;
     let leg3 = bestEnd ? bestEnd.walkLeg : null;
 
-    if (bestStart && leg1 && parseFloat(leg1.km) > 0.8) {
-        let st1 = bestStart.station;
-        let leg2 = await getRouteOSRM(st1.lat, st1.lon, bestEnd.station.lat, bestEnd.station.lon, 'driving');
-        if (leg2 && leg3) {
-            let busMins = Math.ceil(parseFloat(leg1.km) * 3) + 5;
-            let totalMixedTime = Math.ceil(busMins + leg2.rawMins + leg3.rawMins + 6);
-            
-            outputRoutes.push({
-                type: 'mixed', badge: '🌟 最佳公車轉乘方案', 
-                title: `🚌 搭乘公車 [${st1.busRoute}] ➔ 轉捷運`,
-                time: totalMixedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '35 元', color: '#f59e0b',
-                steps: [
-                    { 
-                        // 🔥 直接在標題告訴使用者怎麼搭！
-                        icon: '🚌', title: `搭乘公車 [${st1.busRoute}] 於【${st1.busStop}】下車`, mins: busMins, color: '#0ea5e9', path: leg1.path, nodeName: `[公車上車] 起點站牌`, markerCoord: [originCoords.lat, originCoords.lon],
-                        detail: `<div class="instruction-box">🚌 保姆級乘車指引：</div>
-                                 📍 <b>上車站點</b>：請前往起點附近最近的公車站牌。<br>
-                                 🚌 <b>搭乘路線</b>：招手搭乘市區公車 <b>[ ${st1.busRoute} ]</b>。<br>
-                                 📍 <b>下車站點</b>：請在 <b>【 ${st1.busStop} 】</b> 站牌按鈴下車。<br>
-                                 🚶 <b>轉乘步行</b>：下車後步行約 1 分鐘即可進入捷運站。`
-                    },
-                    { icon: '🚇', title: `從【${st1.name}】搭乘捷運至【${bestEnd.station.name}】`, mins: leg2.rawMins, color: '#E60012', path: leg2.path, nodeName: `[轉乘] ${st1.name}`, markerCoord: [st1.lat, st1.lon], detail: `進入捷運月台，車程預計 ${leg2.rawMins} 分鐘。` },
-                    { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#10B981', path: leg3.path, nodeName: `[下車] ${bestEnd.station.name}`, markerCoord: [bestEnd.station.lat, bestEnd.station.lon], detail: `刷卡出站，沿林蔭人行道步行抵達目的地。` }
-                ]
-            });
+    if (bestStart && leg1 && leg3) {
+        let totalWalkKm = parseFloat(leg1.km) + parseFloat(leg3.km);
+        if (totalWalkKm <= 10) {
+            let st1 = bestStart.station;
+            let leg2 = await getRouteOSRM(st1.lat, st1.lon, bestEnd.station.lat, bestEnd.station.lon, 'driving');
+            if (leg2) {
+                let busMins = Math.ceil(parseFloat(leg1.km) * 3) + 5;
+                let totalMixedTime = Math.ceil(busMins + leg2.rawMins + leg3.rawMins + 6);
+                
+                // 依據原始商業邏輯，大於 800m 給予保姆級識別
+                let dynamicBadge = parseFloat(leg1.km) > 0.8 ? '🌟 保姆級公車轉乘方案' : '🚌 公車捷運轉乘方案';
+
+                outputRoutes.push({
+                    type: 'mixed', badge: dynamicBadge, 
+                    title: `🚌 搭乘公車 [${st1.busRoute}] 於【${st1.busStop}】下車`,
+                    time: totalMixedTime, dist: (parseFloat(leg1.km) + parseFloat(leg2.km) + parseFloat(leg3.km)).toFixed(2), price: '35 元', color: '#f59e0b',
+                    steps: [
+                        { 
+                            icon: '🚌', title: `搭乘公車 [${st1.busRoute}] 於【${st1.busStop}】下車`, mins: busMins, color: '#0ea5e9', path: leg1.path, nodeName: `[公車上車] 起點站牌`, markerCoord: [originCoords.lat, originCoords.lon],
+                            detail: `<div class="instruction-box">🚌 保姆級乘車指引：</div>
+                                     📍 <b>上車站點</b>：請前往起點附近最近的公車站牌。<br>
+                                     🚌 <b>搭乘路線</b>：招手搭乘市區公車 <b>[ ${st1.busRoute} ]</b>。<br>
+                                     📍 <b>下車站點</b>：請在 <b>【 ${st1.busStop} 】</b> 站牌按鈴下車。<br>
+                                     🚶 <b>轉乘步行</b>：下車後步行約 1 分鐘即可進入捷運站。`
+                        },
+                        { icon: '🚇', title: `從【${st1.name}】搭乘捷運至【${bestEnd.station.name}】`, mins: leg2.rawMins, color: '#E60012', path: leg2.path, nodeName: `[轉乘] ${st1.name}`, markerCoord: [st1.lat, st1.lon], detail: `進入捷運月台，車程預計 ${leg2.rawMins} 分鐘。` },
+                        { icon: '🚶', title: `出站步行至終點`, mins: leg3.rawMins, color: '#10B981', path: leg3.path, nodeName: `[下車] ${bestEnd.station.name}`, markerCoord: [bestEnd.station.lat, bestEnd.station.lon], detail: `刷卡出站，沿林蔭人行道步行抵達目的地。` }
+                    ]
+                });
+            }
         }
     }
 
@@ -263,7 +270,6 @@ async function runRoutePlanning() {
     const driveRoute = await getRouteOSRM(originCoords.lat, originCoords.lon, destCoords.lat, destCoords.lon, 'driving');
     if (driveRoute && driveRoute.path && driveRoute.path.length > 0) {
         let waitTime = 5;
-        // 🔥 終極加權：原始車程直接乘上 1.35 倍 (原本的15% 再加上額外的15%以上)，確保絕不遲到！
         let adjustedDriveMins = Math.ceil(driveRoute.rawMins * 1.35);
         let totalUberTime = adjustedDriveMins + waitTime;
         let price = Math.ceil(85 + (parseFloat(driveRoute.km) * 25));
@@ -278,11 +284,13 @@ async function runRoutePlanning() {
         });
     }
 
-    // 排序機制：綜合 > 輕軌 > 捷運 > 計程車
-    outputRoutes.sort((a, b) => {
-        const priority = { mixed: 1, lrt: 2, mrt: 3, uber: 4 };
-        return (priority[a.type] || 99) - (priority[b.type] || 99);
-    });
+    // ==================== 綜合評估排序：時間效益最佳者置頂 ====================
+    outputRoutes.sort((a, b) => a.time - b.time);
+
+    // 幫最快抵達的最佳大眾運輸方案冠上榮譽勳章
+    if (outputRoutes.length > 0) {
+        outputRoutes[0].badge = '🏆 系統推薦最佳方案 | ' + outputRoutes[0].badge;
+    }
 
     renderRouteList(outputRoutes);
     loading.classList.add('hidden');
@@ -366,7 +374,7 @@ function drawRouteOnMap(steps) {
             boundsPoints = boundsPoints.concat(s.path);
         }
         
-        // 🔥 終極地圖標籤：強制將「[上車] 站名」釘死在地圖畫面上
+        // 🗺️ 地圖導航 UI 規範：強制使用 permanent: true 固定上車站、下車站名稱
         if (s.nodeName && s.markerCoord) {
             L.circleMarker(s.markerCoord, { radius: 7, fillColor: s.color, color: '#ffffff', weight: 2.5, fillOpacity: 1 }).addTo(mapLayers);
             
