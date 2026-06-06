@@ -17,18 +17,19 @@ body { background-color: var(--bg-color); color: var(--text-main); display: flex
 
 .app-container { display: flex; width: 100%; height: 100%; position: relative; }
 
-/* 🖥️ 電腦端排版 */
+/* 🖥️ 電腦端左右排版 */
 .sidebar { width: 420px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 1000; box-shadow: 2px 0 15px rgba(0,0,0,0.05); }
-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
+header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border-color); }
 .header-actions { display: flex; gap: 8px; align-items: center; }
 .logo { font-size: 18px; font-weight: 800; color: var(--text-main); line-height: 1.2; }
 .logo span { font-size: 11px; color: var(--text-muted); font-weight: normal; display: block; margin-top: 2px; }
 
-.icon-btn { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 50%; font-size: 16px; cursor: pointer; color: var(--text-main); width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; }
+.icon-btn { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 50%; font-size: 16px; cursor: pointer; color: var(--text-main); width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+.icon-btn:hover { background: var(--border-color); }
 .icon-btn.small { width: 28px; height: 28px; font-size: 13px; border: none; background: transparent; }
 
-/* 🧠 智慧收合動畫控制 */
-.control-panel { padding: 16px 20px; border-bottom: 1px solid var(--border-color); max-height: 500px; opacity: 1; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s, opacity 0.3s; }
+/* 🔍 UI 縮小收合功能的核心樣式 */
+.control-panel { padding: 16px 20px; border-bottom: 1px solid var(--border-color); max-height: 520px; opacity: 1; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s, opacity 0.3s; }
 .control-panel.collapsed { max-height: 0; padding: 0 20px; opacity: 0; border-bottom: none; }
 
 .avatar-selector { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; font-size: 12px; font-weight: bold; color: var(--text-muted); }
@@ -48,12 +49,13 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
 .tag-bus { border-color: #0ea5e9; color: #0ea5e9; background: rgba(14, 165, 233, 0.08); }
 
 .primary-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+.primary-btn:hover { background: var(--primary-hover); }
 
 .results-area { flex: 1; overflow-y: auto; padding: 16px; position: relative; }
 .empty-state { color: var(--text-muted); text-align: center; font-size: 13px; margin-top: 16px; }
 .hidden { display: none !important; }
 
-/* 🚌 更精緻厚實的資訊指引卡樣式 */
+/* 🚌 路線指引卡片 */
 .route-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
 .route-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
 .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-bottom: 8px; }
@@ -68,16 +70,16 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
 .meta-value { font-size: 14px; font-weight: 800; }
 
 .step-row { display: flex; gap: 12px; margin-bottom: 14px; position: relative; }
-.step-row:not(:last-child)::before { content: ''; position: absolute; left: 14px; top: 32px; bottom: -14px; width: 2px; background: var(--border-color); z-index: 1; }
+.step-row:not(:last-child)::before { content: ''; position: absolute; left: 15px; top: 32px; bottom: -14px; width: 2px; background: var(--border-color); z-index: 1; }
 .step-circle { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; color: white; z-index: 2; flex-shrink: 0; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.step-body { flex: 1; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+.step-body { flex: 1; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; }
 .clickable-step-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .step-title { font-weight: 700; font-size: 13px; color: var(--text-main); }
 .click-hint { font-size: 11px; color: var(--primary); font-weight: bold; background: rgba(2, 132, 199, 0.05); padding: 2px 6px; border-radius: 4px; }
 
-/* 🚌 保姆級乘車細節指南樣式 */
+/* 🚌 保姆級智慧轉乘盒子樣式 */
 .sub-step-details { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); padding-top: 10px; border-top: 1px dashed var(--border-color); line-height: 1.6; }
-.instruction-box { background: var(--input-bg); padding: 8px 10px; border-radius: 6px; margin-top: 6px; font-weight: 500; border-left: 3px solid var(--primary); color: var(--text-main); }
+.instruction-box { background: var(--input-bg); padding: 10px 12px; border-radius: 6px; margin-top: 6px; font-weight: 600; border-left: 4px solid var(--primary); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 
 .autocomplete-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; z-index: 9999; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 .autocomplete-item { padding: 10px 12px; cursor: pointer; font-size: 13px; font-weight: bold; border-bottom: 1px solid var(--border-color); }
@@ -103,7 +105,6 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
     header { padding: 10px 16px; }
     .logo { font-size: 15px; }
     .control-panel { padding: 10px 16px; }
-    /* 收合時釋放更多空間給手機 */
     .control-panel.collapsed { max-height: 0; padding: 0 16px; }
 }
 
