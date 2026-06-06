@@ -1,81 +1,75 @@
 <!DOCTYPE html>
-<html lang="zh-TW" data-theme="light">
+<html lang="zh-TW" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高雄大眾運輸全能導航 V9</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <title>K-Transit  高雄綜合智慧轉乘系統</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
     <div class="app-container">
-        <aside class="control-panel">
-            <div class="panel-header">
-                <div class="header-title">
-                    <h1>🚇 K-Transit PRO</h1>
-                    <p>高雄自動化智慧轉乘系統</p>
+        <aside class="sidebar">
+            <header>
+                <div class="logo">🚆 K-Transit PRO<br><span>高雄全能綜合轉乘系統</span></div>
+                <div class="header-actions">
+                    <button id="togglePanelBtn" class="icon-btn hidden" title="修改/展開搜尋面板">🔍</button>
+                    <button id="themeToggle" class="icon-btn theme-btn">🌙</button>
                 </div>
-                <button id="themeToggle" class="theme-btn">🌙</button>
-            </div>
+            </header>
 
-            <div class="avatar-section">
-                <span class="section-label">角色造型：</span>
-                <div class="avatar-picker">
+            <div id="searchPanel" class="control-panel">
+                <div class="avatar-selector">
+                    <span>角色：</span>
                     <button class="avatar-btn active" data-avatar="🧍‍♂️">🧍‍♂️</button>
                     <button class="avatar-btn" data-avatar="🧍‍♀️">🧍‍♀️</button>
                     <button class="avatar-btn" data-avatar="🚴">🚴</button>
                     <button class="avatar-btn" data-avatar="🐱">🐱</button>
                     <button class="avatar-btn" data-avatar="🐶">🐶</button>
                 </div>
-            </div>
 
-            <div class="search-section">
-                <div class="input-group">
+                <div class="input-section">
                     <div class="input-wrapper">
                         <span class="input-icon">📍</span>
-                        <input type="text" id="originInput" placeholder="輸入起點 或 使用目前位置" autocomplete="off" data-location-type="origin">
-                        <button id="useLocationBtn" class="action-icon-btn">🎯</button>
+                        <input type="text" id="originInput" placeholder="輸入起點 或 使用目前位置" data-location-type="origin" autocomplete="off">
+                        <button id="useLocationBtn" class="icon-btn small location-btn" title="使用當前定位">🎯</button>
+                        <div id="originDropdown" class="autocomplete-dropdown hidden"></div>
                     </div>
-                    <div id="originDropdown" class="autocomplete-dropdown hidden"></div>
-                </div>
+                    
+                    <button id="swapBtn" class="swap-btn">⇅</button>
 
-                <button id="swapBtn" class="swap-btn">⇅</button>
-
-                <div class="input-group">
                     <div class="input-wrapper">
                         <span class="input-icon">🏁</span>
-                        <input type="text" id="destinationInput" placeholder="輸入目的地" autocomplete="off" data-location-type="destination">
-                    </div>
-                    <div id="destinationDropdown" class="autocomplete-dropdown hidden"></div>
-                </div>
-
-                <div class="filter-wrapper">
-                    <div class="transit-filters">
-                        <button class="filter-tag active" data-transit="mrt">捷運</button>
-                        <button class="filter-tag active" data-transit="lightrail">輕軌</button>
-                        <button class="filter-tag active" data-transit="bus">公車</button>
-                        <button class="filter-tag active" data-transit="bike">YouBike</button>
+                        <input type="text" id="destinationInput" placeholder="輸入目的地" data-location-type="destination" autocomplete="off">
+                        <div id="destinationDropdown" class="autocomplete-dropdown hidden"></div>
                     </div>
                 </div>
 
-                <button id="searchBtn" class="primary-search-btn">規劃智慧路線</button>
+                <div class="link-shortcuts">
+                    <div class="shortcut-tag tag-mixed">🌟 最佳綜合</div>
+                    <a href="https://www.krtc.com.tw/Guide/timetable" target="_blank" class="shortcut-tag tag-mrt">🚇 捷運 🔗</a>
+                    <a href="https://www.krtc.com.tw/KLRT/klrt03" target="_blank" class="shortcut-tag tag-lrt">🍏 輕軌 🔗</a>
+                    <a href="https://ibus.tbkc.gov.tw/ibus/" target="_blank" class="shortcut-tag tag-bus">🚌 公車 🔗</a>
+                </div>
+
+                <button id="searchBtn" class="primary-btn">規劃最佳路線</button>
             </div>
 
-            <div class="dynamic-view-box">
-                <div id="listView" class="view-block">
-                    <div id="loadingIndicator" class="loading-box hidden">
-                        <div class="spinner"></div>
-                        <p>正在獨立分析高雄最佳路網解...</p>
-                    </div>
-                    <div id="routesContainer" class="routes-container">
-                        <p class="placeholder-text">請在上方輸入起訖點，開啟智慧路網導航。</p>
+            <div id="resultsArea" class="results-area">
+                <div id="loadingIndicator" class="hidden loading-box">
+                    <div class="spinner"></div>
+                    <p>智慧跨運具演算法精算中...</p>
+                </div>
+                
+                <div id="listView">
+                    <div id="routesContainer">
+                        <p class="empty-state">請輸入起訖點，開啟高雄最佳跨運具導航。</p>
                     </div>
                 </div>
 
-                <div id="detailView" class="view-block hidden">
-                    <button id="backToListBtn" class="back-list-btn">⬅️ 返回方案列表</button>
-                    <div id="detailContent" class="detail-content-wrapper"></div>
+                <div id="detailView" class="hidden">
+                    <button id="backToListBtn" class="back-btn">⬅ 返回方案列表</button>
+                    <div id="detailContent"></div>
                 </div>
             </div>
         </aside>
@@ -84,10 +78,8 @@
             <div id="map"></div>
         </main>
     </div>
-
-    <div id="avatarToast" class="avatar-toast hidden"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
