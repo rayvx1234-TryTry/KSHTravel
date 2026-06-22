@@ -129,3 +129,118 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
     border-left: 4px solid var(--border-color);
     transition: all 0.2s ease-in-out;
 }
+/* 1. 初始全白畫面 */
+.pure-white-splash {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #ffffff; /* 圖1：全白起手 */
+    z-index: 999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    /* 轉場到暗色地圖 */
+    transition: opacity 1s cubic-bezier(0.25, 1, 0.5, 1), visibility 1s;
+}
+
+/* 關閉動畫時的霧化淡出 */
+.pure-white-splash.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.laser-container {
+    position: relative;
+    text-align: center;
+}
+
+/* 2. 雷射光束：從左側射入，瘋狂旋繞後從右側射出 */
+.laser-beam {
+    position: absolute;
+    width: 8px; height: 8px;
+    background: #ff7700;
+    border-radius: 50%;
+    box-shadow: 0 0 20px #ffaa00, 0 0 40px #ff3300;
+    opacity: 0;
+    z-index: 10;
+    animation: laserEngrave 2.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+}
+
+/* 3. KSH 古銅徽章：被雷射雕刻出來的瞬間爆發與固化 */
+.ksh-logo-shield {
+    width: 140px; height: 140px;
+    border: 4px solid #b18a4a; /* 古銅色 */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    background: radial-gradient(circle, #2c2215 0%, #0b0f19 100%);
+    box-shadow: 0 0 30px rgba(177, 138, 74, 0);
+    opacity: 0;
+    transform: scale(0.8);
+    animation: logoSolidify 1.5s ease-out forwards;
+    animation-delay: 1.2s; /* 等雷射掃到一半時顯現 */
+}
+
+.monogram {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #b18a4a;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+/* 4. 下方文字優雅襯托淡入 */
+.brand-text-group {
+    margin-top: 25px;
+    opacity: 0;
+    animation: textFadeIn 1s ease-out forwards;
+    animation-delay: 2.2s;
+}
+
+.main-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: 2px;
+}
+
+.sub-title-zh {
+    font-size: 1.1rem;
+    color: #475569;
+    margin: 5px 0 0 0;
+    letter-spacing: 6px;
+    font-weight: 600;
+}
+
+.sub-title-en {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin: 2px 0 0 0;
+    letter-spacing: 1px;
+}
+
+/* ==================== 🎬 動畫時序精準計算 ==================== */
+@keyframes laserEngrave {
+    0% { left: -300px; top: 0px; opacity: 1; transform: scale(1); }
+    30% { left: 50px; top: -60px; }
+    50% { left: -50px; top: 60px; }
+    70% { left: 0px; top: 0px; transform: scale(1.5); }
+    85% { left: 300px; top: 0px; opacity: 1; }
+    100% { left: 600px; top: 0px; opacity: 0; }
+}
+
+@keyframes logoSolidify {
+    to {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 40px rgba(177, 138, 74, 0.4);
+    }
+}
+
+@keyframes textFadeIn {
+    to { opacity: 1; }
+}

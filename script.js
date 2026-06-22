@@ -462,3 +462,18 @@ document.getElementById('backToListBtn').addEventListener('click', () => {
 
 document.getElementById('searchBtn').addEventListener('click', runRoutePlanning);
 window.onload = initMap;
+// 不管網頁載入狀態，直接強制在 3.5 秒後把全白動畫層移除
+setTimeout(() => {
+    const splashScreen = document.getElementById('app-splash-screen');
+    if (splashScreen) {
+        // 先加上淡出動畫
+        splashScreen.style.transition = "opacity 1s ease-in-out, visibility 1s";
+        splashScreen.style.opacity = "0";
+        splashScreen.style.visibility = "hidden";
+        
+        // 1秒後徹底從網頁拔除，避免擋住滑點擊
+        setTimeout(() => {
+            splashScreen.remove();
+        }, 3000);
+    }
+}, 3500);
