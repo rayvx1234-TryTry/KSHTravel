@@ -516,35 +516,35 @@ function recordSearchData(originAddress, destinationAddress) {
 }
 
 // 開啟申報視窗
+// 修改開窗邏輯：點擊按鈕時，精確抓取你 HTML 裡 originInput 和 destinationInput 的值
 function openFeedbackModal() {
-    // 智慧盲抓：嘗試各種網頁可能使用的常見 ID 或屬性
-    let startEl = document.getElementById('start') || 
-                  document.getElementById('startInput') || 
-                  document.getElementById('origin') ||
-                  document.querySelector('input[placeholder*="起點"]') ||
-                  document.querySelector('input[placeholder*="出發"]');
-                  
-    let endEl = document.getElementById('end') || 
-                document.getElementById('endInput') || 
-                document.getElementById('destination') ||
-                document.querySelector('input[placeholder*="終點"]') ||
-                document.querySelector('input[placeholder*="目的地"]');
+    const startAddress = document.getElementById('originInput').value;
+    const endAddress = document.getElementById('destinationInput').value;
 
-    // 順利拿到字串，拿不到就給提示
-    const startAddress = startEl ? startEl.value : "未偵測到（請右鍵檢查起點輸入框的ID）";
-    const endAddress = endEl ? endEl.value : "未偵測到（請右鍵檢查終點輸入框的ID）";
-
-    // 存入記憶體
+    // 將抓到的真實地址存進快取
     currentSearch.origin = startAddress;
     currentSearch.destination = endAddress;
     
     // 渲染到 Modal 的畫面上
-    document.getElementById('preview-origin').innerText = startAddress;
-    document.getElementById('preview-destination').innerText = endAddress;
+    document.getElementById('preview-origin').innerText = startAddress || "未輸入起點";
+    document.getElementById('preview-destination').innerText = endAddress || "未輸入終點";
     
     // 顯示視窗
     document.getElementById('feedback-modal').classList.add('active');
 }
+
+// 保險攔截器：當點擊你 HTML 裡的「規劃最佳路線」按鈕時，同步執行背景自動記錄
+document.getElementById('searchBtn').addEventListener('click', function() {
+    const startAddress = document.getElementById('originInput').value;
+    const endAddress = document.getElementById('destinationInput').value;
+    
+    currentSearch.origin = startAddress;
+    currentSearch.destination = endAddress;
+    
+    if (typeof recordSearchData === 'function') {
+        recordSearchData(startAddress, endAddress);
+    }
+});
 
 // 關閉申報視窗
 function closeFeedbackModal() {
