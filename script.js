@@ -477,3 +477,161 @@ setTimeout(() => {
         }, 3000);
     }
 }, 3500);
+// 🎯 請在下方單引號內，貼上你剛剛在 Google GAS 複製的網頁應用程式 URL
+const GOOGLE_GAS_URL = 'https://script.google.com/macros/s/AKfycbyJ3eclBtUq7NBycRn53aefyZJAhFocqzZVMjMSJqp_VOCBUpKh5hsVegH5TnrM7QmBWQ/exec';
+
+// 全域變數：用來暫存使用者當前查詢的地址
+let currentSearch = {
+    origin: '',
+    destination: ''
+};
+
+/**
+ * 核心功能 A：背景全自動記錄地址
+ * 當使用者點擊「開始查詢路線」時，請在你的地圖查詢 function 裡呼叫此函式！
+ */
+function recordSearchData(originAddress, destinationAddress) {
+    // 1. 先把地址儲存到記憶體中，如果使用者之後點 👎 可以直接帶入
+    currentSearch.origin = originAddress;
+    currentSearch.destination = destinationAddress;
+    
+    // 2. 自動在背景打包，發送給 Google 試算表默默記錄
+    const payload = {
+        origin: originAddress,
+        destination: destinationAddress,
+        feedbackType: "純查詢自動記錄",
+        comment: "使用者執行了路線搜尋",
+        contact: ""
+    };
+    
+    // 使用 fetch 異步傳送，不干擾使用者操作
+    fetch(GOOGLE_GAS_URL, {
+        method: "POST",
+        mode: "no-cors", // 跨網域拋送必備
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        console.log("KSHtravel 系統提示：背景已自動記錄本次搜尋。");
+    }).catch(err => console.error("背景記錄失敗：", err));
+}
+
+// 開啟申報視窗
+function openFeedbackModal() {
+    // 智慧盲抓：嘗試各種網頁可能使用的常見 ID 或屬性
+    let startEl = document.getElementById('start') || 
+                  document.getElementById('startInput') || 
+                  document.getElementById('origin') ||
+                  document.querySelector('input[placeholder*="起點"]') ||
+                  document.querySelector('input[placeholder*="出發"]');
+                  
+    let endEl = document.getElementById('end') || 
+                document.getElementById('endInput') || 
+                document.getElementById('destination') ||
+                document.querySelector('input[placeholder*="終點"]') ||
+                document.querySelector('input[placeholder*="目的地"]');
+
+    // 順利拿到字串，拿不到就給提示
+    const startAddress = startEl ? startEl.value : "未偵測到（請右鍵檢查起點輸入框的ID）";
+    const endAddress = endEl ? endEl.value : "未偵測到（請右鍵檢查終點輸入框的ID）";
+
+    // 存入記憶體
+    currentSearch.origin = startAddress;
+    currentSearch.destination = endAddress;
+    
+    // 渲染到 Modal 的畫面上
+    document.getElementById('preview-origin').innerText = startAddress;
+    document.getElementById('preview-destination').innerText = endAddress;
+    
+    // 顯示視窗
+    document.getElementById('feedback-modal').classList.add('active');
+}
+
+// 關閉申報視窗
+function closeFeedbackModal() {
+    document.getElementById('feedback-modal').classList.remove('active');
+}
+
+/**
+ * 核心功能 B：使用者點擊 👍 或 👎 完整送出申報
+ */
+function submitFullFeedback() {
+    const type = document.getElementById('fb-type').value;
+    const comment = document.getElementById('fb-comment').value;
+    const contact = document.getElementById('fb-contact').value;
+    
+    if(!comment.trim()) {
+        alert("請填寫具體狀況描述，讓我們知道如何優化！");
+        return;
+    }
+    
+    const payload = {
+        origin: currentSearch.origin,
+        destination: currentSearch.destination,
+        feedbackType: type,
+        comment: comment,
+        contact: contact
+    };
+    
+    // 更改按鈕狀態提示填寫中
+    const submitBtn = document.querySelector('.btn-submit-feedback');
+    submitBtn.innerText = "傳送中...";
+    submitBtn.disabled = true;
+
+    fetch(GOOGLE_GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        alert("🎉 申報成功！感謝您協助優化高雄智慧轉乘系統！");
+        // 清空表單
+        document.getElementById('fb-comment').value = '';
+        document.getElementById('fb-contact').value = '';
+        closeFeedbackModal();
+    }).catch(err => {
+        alert("傳送失敗，請檢查網路連線。");
+        console.error(err);
+    }).finally(() => {
+        submitBtn.innerText = "送出申報";
+        submitBtn.disabled = false;
+    });
+}
+
+// 滿意按鈕的快速傳送
+function sendAutoRecord(statusText) {
+    const payload = {
+        origin: currentSearch.origin,
+        destination: currentSearch.destination,
+        feedbackType: "使用者滿意度",
+        comment: `使用者點擊了：${statusText}`,
+        contact: ""
+    };
+    alert("謝謝您的回饋！我們會繼續保持！");
+    fetch(GOOGLE_GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+}
+// 🎯 萬用攔截器：當使用者點擊「規劃最佳路線」時，自動觸發背景記錄
+document.addEventListener('click', function(event) {
+    // 檢查使用者點擊的按鈕字眼，是不是包含「規劃」或「路線」
+    if (event.target && (
+        event.target.innerText.includes('規劃') || 
+        event.target.innerText.includes('路線') || 
+        event.target.value === '規劃最佳路線'
+    )) {
+        console.log("K-Transit PRO 系統提示：偵測到使用者點擊規劃按鈕，啟動智慧盲抓！");
+        
+        // 智慧盲抓輸入框
+        let sEl = document.getElementById('start') || document.getElementById('startInput') || document.getElementById('origin') || document.querySelector('input[placeholder*="起點"]') || document.querySelector('input[placeholder*="出發"]');
+        let eEl = document.getElementById('end') || document.getElementById('endInput') || document.getElementById('destination') || document.querySelector('input[placeholder*="終點"]') || document.querySelector('input[placeholder*="目的地"]');
+        
+        if (sEl && eEl) {
+            // 1. 同步存進快取，這樣等一下點開 Modal 才會看得到
+            currentSearch.origin = sEl.value;
+            currentSearch.destination = eEl.value;
+            
+            // 2. 啟動你原本的 fetch 拋送給 Google 試算表
+            if (typeof recordSearchData === 'function') {
+                recordSearchData(sEl.value, eEl.value);
+            }
+        }
+    }
+});

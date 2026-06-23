@@ -6,6 +6,7 @@
     <title>K-Transit  高雄綜合智慧轉乘系統</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app-splash-screen" class="pure-white-splash">
@@ -97,4 +98,45 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
-</html>
+<button class="ksh-feedback-fab" onclick="openFeedbackModal()" title="路線有誤或提供建議">
+  <span>⚠️ 路線申報 / 建議</span>
+</button>
+
+<div id="feedback-modal" class="fb-modal-overlay">
+  <div class="fb-modal-window">
+    <div class="fb-modal-header">
+      <h3>💡 路線申報與意見回饋</h3>
+      <span class="fb-close-btn" onclick="closeFeedbackModal()">&times;</span>
+    </div>
+    <div class="fb-modal-body">
+      <div class="fb-quick-rate">
+        <button class="rate-btn positive" onclick="sendAutoRecord('滿意'); closeFeedbackModal();">👍 路線很讚</button>
+      </div>
+      
+      <hr style="border: 0; border-top: 1px solid rgba(177, 138, 74, 0.2); margin: 15px 0;">
+
+      <div class="fb-info-preview">
+        <p><strong>出發地：</strong> <span id="preview-origin">偵測中...</span></p>
+        <p><strong>目的地：</strong> <span id="preview-destination">偵測中...</span></p>
+      </div>
+      
+      <label for="fb-type">回饋類型</label>
+      <select id="fb-type">
+        <option value="有更佳路線">💡 有更佳路線（推薦我的私房祕技）</option>
+        <option value="轉乘時間不足">⏳ 轉乘時間不足 / 步行太遠</option>
+        <option value="票價錯誤">💰 票價錯誤</option>
+        <option value="班次資訊落後">🚌 班次資訊落後</option>
+        <option value="地圖標記錯誤">📍 地圖標記錯誤</option>
+        <option value="給開發者的話">💬 給開發者的話</option>
+      </select>
+
+      <label for="fb-comment">具體描述</label>
+      <textarea id="fb-comment" placeholder="請告訴我們更詳細的狀況...例如這條路線走太久了！" rows="4"></textarea>
+
+      <label for="fb-contact">聯絡方式 (選填)</label>
+      <input type="text" id="fb-contact" placeholder="Email 或 Line ID">
+      
+      <button class="btn-submit-feedback" onclick="submitFullFeedback()">送出申報</button>
+    </div>
+  </div>
+</div>

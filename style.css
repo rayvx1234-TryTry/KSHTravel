@@ -244,3 +244,176 @@ input { flex: 1; border: none; background: transparent; outline: none; font-size
 @keyframes textFadeIn {
     to { opacity: 1; }
 }
+/* 👍/👎 按鈕區塊 */
+.feedback-trigger-zone {
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid rgba(177, 138, 74, 0.2);
+}
+.feedback-trigger-zone p {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+.btn-feedback {
+  padding: 6px 12px;
+  margin: 0 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.btn-feedback.positive { background: #1e3a1e; color: #4ade80; }
+.btn-feedback.negative { background: #3b1e1e; color: #f87171; }
+.btn-feedback:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+/* 彈出視窗蓋板 */
+.fb-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000000;
+  display: flex; justify-content: center; align-items: center;
+  opacity: 0; visibility: hidden;
+  transition: all 0.3s ease-in-out;
+}
+.fb-modal-overlay.active { opacity: 1; visibility: visible; }
+
+/* 彈出視窗本體 */
+.fb-modal-window {
+  background: #111827; /* 深色宇宙底色 */
+  border: 2px solid #b18a4a; /* 古典金銅框 */
+  border-radius: 12px;
+  width: 450px; max-width: 90vw;
+  box-shadow: 0 0 30px rgba(177, 138, 74, 0.3);
+  overflow: hidden;
+  color: #e2e8f0;
+}
+.fb-modal-header {
+  background: #1f2937; padding: 15px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid rgba(177, 138, 74, 0.3);
+}
+.fb-modal-header h3 { margin: 0; color: #b18a4a; font-size: 1.1rem; }
+.fb-close-btn { font-size: 1.5rem; cursor: pointer; color: #94a3b8; }
+.fb-close-btn:hover { color: #ffffff; }
+
+/* 表單內置 */
+.fb-modal-body { padding: 20px; display: flex; flex-direction: column; }
+.fb-info-preview {
+  background: #1f2937; padding: 10px; border-radius: 6px;
+  margin-bottom: 15px; font-size: 0.85rem; border-left: 3px solid #b18a4a;
+}
+.fb-info-preview p { margin: 4px 0; color: #94a3b8; }
+.fb-info-preview span { color: #f3f4f6; }
+
+.fb-modal-body label { font-size: 0.85rem; color: #b18a4a; margin-top: 10px; margin-bottom: 4px; }
+.fb-modal-body select, .fb-modal-body textarea, .fb-modal-body input {
+  background: #1f2937; border: 1px solid #4b5563; border-radius: 6px;
+  padding: 8px; color: #ffffff; font-size: 0.9rem; outline: none;
+}
+.fb-modal-body select:focus, .fb-modal-body textarea:focus, .fb-modal-body input:focus {
+  border-color: #b18a4a;
+}
+
+.btn-submit-feedback {
+  margin-top: 20px; background: #b18a4a; color: #111827;
+  border: none; padding: 10px; border-radius: 6px; font-weight: bold;
+  cursor: pointer; transition: background 0.2s;
+}
+.btn-submit-feedback:hover { background: #d4af67; }
+/* 右下角懸浮按鈕 (FAB) */
+.ksh-feedback-fab {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 999; /* 確保在 Leaflet 地圖上方，但低於遮罩層 */
+  background: #111827;
+  border: 1px solid #b18a4a;
+  color: #b18a4a;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 10px rgba(177, 138, 74, 0.2);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.ksh-feedback-fab:hover {
+  background: #b18a4a;
+  color: #111827;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(177, 138, 74, 0.4);
+}
+
+/* 快速評分按鈕微調 */
+.fb-quick-rate {
+  display: flex;
+  justify-content: center;
+}
+.fb-quick-rate .rate-btn {
+  background: #1e3a1e;
+  color: #4ade80;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+.fb-quick-rate .rate-btn:hover {
+  background: #2e5c2e;
+}
+/* ==================== 🗺️ K-Transit PRO 全域字體與左側面板優化 ==================== */
+
+/* 1. 換上更好看的現代科技感字體 */
+body, input, button, select, textarea, .main-title {
+  font-family: 'Inter', 'Montserrat', 'Noto Sans TC', 'Microsoft JhengHei', -apple-system, sans-serif !important;
+  letter-spacing: 0.5px; /* 微調字距，讓英文字與中文字更有呼吸感 */
+}
+
+/* 2. 改造左側控制面板（假設你的左側面板 class 名稱為 .left-panel，請依真實狀況修改） */
+.left-panel {
+  background: #111c2e !important; /* 100% 同步 Modal 的沉浸深藍底色 */
+  border-right: 1px solid #1473e6 !important; /* 帥氣的科技藍細邊框 */
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.6) !important; /* 讓面板在網頁上有漂亮的立體陰影 */
+}
+
+/* 3. 左側面板內的輸入框（起點、終點輸入框優化） */
+.left-panel input, .left-panel select {
+  background: #1a2333 !important; /* 統一輸入框黑藍底 */
+  border: 1px solid #2d3748 !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  padding: 12px !important; /* 加大一點點襯墊，打字時視覺更舒適 */
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 當滑鼠點擊輸入框時（Focus 狀態） */
+.left-panel input:focus, .left-panel select:focus {
+  border-color: #1473e6 !important; /* 亮藍色邊框 */
+  box-shadow: 0 0 0 3px rgba(20, 115, 230, 0.25) !important; /* 迷人的藍色微光暈 */
+}
+
+/* 4. 左側面板的「規劃最佳路線」大按鈕 */
+.left-panel .btn-submit, .left-panel button[type="submit"] {
+  background: #1473e6 !important; /* 核心視覺亮藍 */
+  color: #ffffff !important;
+  font-weight: 700 !important; /* 讓按鈕字體加粗，更顯眼 */
+  border-radius: 6px !important;
+  border: none !important;
+  transition: all 0.2s;
+}
+
+.left-panel .btn-submit:hover, .left-panel button[type="submit"]:hover {
+  background: #1b80ff !important;
+  transform: translateY(-1px); /* 懸浮時有一點點往上飄的動態 */
+  box-shadow: 0 4px 12px rgba(20, 115, 230, 0.3);
+}
